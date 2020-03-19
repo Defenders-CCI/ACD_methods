@@ -1,0 +1,10 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+_site/*
+.httr-oauth
+AlgorithmValidation/data
+AlgorithmValidation/data/MAD.rds
+AlgorithmValidation/data/IW.rds
+data.RData

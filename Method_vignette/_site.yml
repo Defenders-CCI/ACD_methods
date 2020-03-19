@@ -1,0 +1,15 @@
+name: "ACD_methods"
+theme: yeti
+navbar:
+  title: "Automated Change Detection Methods"
+  type: inverse
+  left:
+    - text: CCI-dev
+      href: https://cci-dev.org
+    - icon: fa-question-circle fa-lg
+      href: mailto:esa@defenders.org
+  right:
+    - icon: fa-github fa-lg
+      href: https://github.com/mjevans26/ACD_methods
+    - text: Defenders
+      href: http://www.defenders.org

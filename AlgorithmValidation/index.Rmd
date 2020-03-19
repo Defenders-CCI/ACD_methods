@@ -1,0 +1,844 @@
+---
+title: "Change Detection Evaluation"
+author: "Michael Evans"
+date: "`r Sys.Date()`"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    vertical_layout: scroll
+    css: custom.css
+    social: menu
+    df_print: paged
+    navbar:
+    - {title: "CCI", align: left, href: "https://cci-dev.org"}
+    - {title: "Defenders", align: left, href: "http://www.defenders.org"}
+    - {title: "", icon: "fa-question-circle fa-lg", align: right, href: "mailto:esa@defenders.org?subject=Change Detection"}
+    - {title: "", icon: "fa-github fa-lg", align: right, href: "https://github.com/Defenders-ESC/"}
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+source("functions.R")
+
+library(dplyr)
+library(flexdashboard)
+library(MASS)
+library(mvtnorm)
+library(plotly)
+library(pROC)
+library(RColorBrewer)
+library(rpart)
+library(shiny)
+library(stringr)
+library(tidyr)
+
+IW <- readRDS("data/IW.rds")
+IW <- select(IW, systemindex, cv_z, nbr_z, ndsi_z, ndvi_z, ndwi_z, rcvmax_z, habitat, disturbance, Loc, Change)
+IW$train <- rbinom(nrow(IW), 1, 0.7)
+MAD <- readRDS("data/MAD.rds")
+MAD$train <- rbinom(nrow(MAD), 1, 0.7)
+
+IWtree <- rpart(Change ~ cv_z + rcvmax_z + ndvi_z + ndsi_z + ndwi_z + nbr_z,
+                data = filter(IW, train ==1), method = 'class')
+IWtree_pred <- predict(IWtree, newdata = filter(IW, train == 0))
+IWtree_roc <- roc(IW$Change[IW$train ==0], predictor = IWtree_pred[,1])
+
+IWlda <- lda(formula = Change ~ cv_z+nbr_z+ndsi_z+ndvi_z+ndwi_z+rcvmax_z,
+               data = filter(IW, train ==1))
+
+#MADlda <- lda(formula = Change ~ chi,
+#                  data = MAD)
+
+IWlda_pred <- predict(IWlda, newdata = filter(IW, train == 0))
+ldaint <- ldaInt(IWlda, IW[IW$train == 0,], c(2:7))
+#MADlda_pred <- predict(MADlda, newdata = MAD)
+
+IWlda_roc <- roc(IW$Change[IW$train ==0], predictor = IWlda_pred$x[,1])
+
+MADlda_roc <- roc(MAD$Change, predictor = MAD$chi)
+
+grid <- expand.grid(habitat = unique(IW$habitat), disturbance = unique(IW$disturbance))
+
+long <- select(IW, Change, habitat, disturbance, cv_z, nbr_z, ndsi_z, ndvi_z, ndwi_z, rcvmax_z)%>%
+  mutate(cv_p = 1-pchisq(cv_z, 6),
+               rcv_p = 1-pnorm(rcvmax_z),
+               ndvi_p = 1-pnorm(ndvi_z),
+               ndsi_p = 1-pnorm(ndsi_z),
+               ndwi_p = 1-pnorm(ndwi_z),
+               nbr_p = 1-pnorm(nbr_z))%>%
+  gather("Metric", "Stat", c(4:15))
+
+plot_IW_zs <- function(i){
+  a <- grid$habitat[i]
+  b <- grid$disturbance[i]
+  df <- select(IW, Change, habitat, disturbance, cv_z, rcvmax_z, nbr_z, ndsi_z, ndvi_z, ndwi_z)%>%
+    mutate(cv_p = 1-pchisq(cv_z, 6),
+               rcv_p = 1-pnorm(rcvmax_z),
+               ndvi_p = 1-pnorm(ndvi_z),
+               ndsi_p = 1-pnorm(ndsi_z),
+               ndwi_p = 1-pnorm(ndwi_z),
+               nbr_p = 1-pnorm(nbr_z))%>%
+    gather("Metric", "Z", 10:15)%>%
+    filter(habitat == a, disturbance == b)
+  
+  plot_ly(type = "box")%>%
+    add_trace(data = df[df$Change == 1,], y = ~Z, x = ~Metric,
+              name = "Change", line = list(color = "orange"),
+              showlegend = ifelse(i == 1, TRUE, FALSE))%>%
+              #legendgroup = ~Change)%>%
+    add_trace(data = df[df$Change == 0,], y = ~Z, x = ~Metric,
+              name = "No", line = list(color = "blue"),
+              showlegend = ifelse(i == 1, TRUE, FALSE))%>%
+              #legendgroup = ~Change)%>%
+    layout(xaxis = list(title = a, tickangle = 45,
+                        tickmode = 'array',
+                        tickvals = c('cv_p', 'rcv_p', 'nbr_p', 'ndvi_p',
+                                     'ndsi_p', 'ndwi_p'),
+                        ticktext = c('CV', 'RCV', 'NBR', 'NDVI', 'NDSI', 'NDWI')),
+           yaxis = list(title = b),
+           margin = list(b = 100))
+}
+
+plot_MAD_zs <- function(i){
+  a <- grid$habitat[i]
+  b <- grid$disturbance[i]
+  df <- filter(MAD, habitat == a, disturbance == b)
+  plot_ly(type = "box")%>%
+    add_trace(data = df[df$Change == 1,], y = ~chi,
+              name = "Change", showlegend = FALSE,
+              line = list(color = "orange"))%>%
+    add_trace(data = df[df$Change == 0,], y = ~chi,
+              name = "No", showlegend = FALSE,
+              line = list(color = 'blue'))%>%
+    layout(xaxis = list(title = a),
+           yaxis = list(title = b),
+           margin = list(b = 100))
+}
+
+plot_IW_ps <- function(i){
+  a <- grid$habitat[i]
+  b <- grid$disturbance[i]
+  df <- filter(IW, habitat == a, disturbance == b)
+  plot_ly(type = "box", data = df, y = ~p, x = ~Change)%>%
+    layout(xaxis = list(title = a),
+           yaxis = list(title = b))
+}
+
+```
+
+
+
+Overview
+==================================
+
+Column {.sidebar}
+-----
+### About
+
+```{r readme, echo = FALSE}
+fluidPage(
+  fluidRow(
+    p("The purpose of this app is to evaluate algorithm performance, generically and in specific habitats. Each page will have:"),
+    h4("Boxplots"),
+    p("Compare the change metric(s) calculated by each algorithm between areas of change and no change.  Ideally, there will be little overlap in values."),
+    h4("ROC Curves"),
+    p("Help identify threshold values that define change from no change.  Curves plot the power to detect changes (True Positive) against the false positive detection rate at all possible thresholds.  The greater the area under these curves, the better the algorithm is performing."),
+    em("Note: the multiple outputs of IW are converted to a single change score using linear discriminant analysis for threshold identification")
+  )
+)
+```
+
+Row
+------------------------------------------------------------------------
+### Generic change detection using each algorithm.
+
+```{r total_roc, echo = FALSE}
+comb <- rbind(gather(MAD, "Metric", "Stat", 9)%>%
+                select(Change, Metric, Stat),
+              select(long, Change, Metric, Stat)%>%
+                filter(grepl("*p", Metric))%>%
+                arrange(desc(Change))
+                 )
+
+fluidPage(
+  fluidRow(
+    modalDialog(
+    title = h2("Automated Change Detection Algorithm Performance"),
+    p("This interactive app presents data produced by Defenders' automated change detection algorithms.  We use two algorithms to identify land cover changes between pairs of satellite images:"),
+    tags$ol(
+      tags$li("Iteratively re-Weighted land cover change (IW)"),
+      tags$li("Multivariate Alteration Detection (MAD)")
+      ),
+      p("Tabs in the navigation bar at the top of the page let you see data from each algorithm, which produce different outputs."),
+    p("Graphs in this app are interactive.  Hover over data to see specific values, and drag to zoom in to parts of a chart."),
+    easyClose = TRUE
+  ),
+    column(6,
+           plot_ly(type = "box")%>%
+             add_trace(data = comb[comb$Change == 1,], x = ~Metric, y = ~Stat,
+                       name = "Change",
+                       line = list(color = "orange"))%>%
+             add_trace(data = comb[comb$Change == 0,], x = ~Metric, y = ~Stat,
+                       name = "No", 
+                       line = list(color = "blue"))%>%
+             layout(yaxis = list(title = 'P-value'),
+                    xaxis = list(title = 'Change metrics',
+                                 tickmode = 'array',
+                                 tickvals = c('p', 'cv_p', 'rcv_p', 'ndvi_p',
+                                              'ndsi_p', 'ndwi_p', 'nbr_p'
+                                 ),
+                                 ticktext = c('Chi*', 'CV', 'RCV', 'NDVI',
+                                              'NDSI', 'NDWI', 'NBR')),
+                    title = 'Algorithm outputs change v. no change.',
+                    margin = list(b = 100))
+           ),
+
+    column(6,
+
+             plot_ly(type = 'scatter', mode = 'lines')%>%
+               add_trace(name = "MAD", x = ~1-MADlda_roc$specificities,
+                         y = ~MADlda_roc$sensitivities, line = list(color = 'purple'),
+                         hoverinfo = 'text',
+                         text = ~paste('Chi-square:', MADlda_roc$thresholds,
+                             "<br>True Positive:", MADlda_roc$sensitivities,
+                             "<br>False Positive:", 1-MADlda_roc$specificities,
+                             sep = " "))%>%
+               add_trace(name = "IW", x = ~1-IWlda_roc$specificities,
+                         y = ~IWlda_roc$sensitivities, line = list(color = 'green'),
+                         hoverinfo = 'text',
+                         text = ~paste('LDA Score:', IWlda_roc$thresholds,
+                                       '<br>True Positive:', IWlda_roc$sensitivities,
+                                       '<br>False Positive:',
+                                       1-IWlda_roc$specificities))%>%
+                   add_annotations(x = 0.5, y = 0.7, xref = "x", yref = "y", showarrow = F,
+                      text = paste("CV =", IWlda$scaling[1]), xanchor = 'left')%>%
+            add_annotations(x = 0.5, y = 0.6, xref = "x", yref = "y", showarrow = F,
+                      text = paste("RCV =", IWlda$scaling[6]), xanchor = 'left')%>%
+            add_annotations(x = 0.5, y = 0.5, xref = "x", yref = "y", showarrow = F,
+                      text = paste("NDVI =", IWlda$scaling[4]), xanchor = 'left')%>%
+            add_annotations(x = 0.5, y = 0.4, xref = "x", yref = "y", showarrow = F,
+                      text = paste("NDSI =", IWlda$scaling[3]), xanchor = 'left')%>%
+            add_annotations(x = 0.5, y = 0.3, xref = "x", yref = "y", showarrow = F,
+                      text = paste("NDWI =", IWlda$scaling[5]), xanchor = 'left')%>%
+            add_annotations(x = 0.5, y = 0.2, xref = "x", yref = "y", showarrow = F,
+                      text = paste("NBR =", IWlda$scaling[2]), xanchor = 'left')%>%
+            add_annotations(x = 0.5, y = 0.1, xref = "x", yref = "y", showarrow = F,
+                      text = paste("Int =", ldaint), xanchor = 'left')%>%
+               layout(title = "ROC: All Changes",
+                      legend = list(x = 0.25, y = 0.2),
+                      xaxis = list(title = "False Positive Rate"),
+                      yaxis = list(title = "True Positive Rate"))
+
+           )
+  )
+)
+```
+
+Row
+------
+```{r table, echo = FALSE}
+```
+
+IW
+===================
+
+Column {.sidebar} 
+-----------------
+### Examine Subsets
+
+```{r selectors, echo=FALSE}
+fluidPage(
+  fluidRow(
+    p("To display validation data and performance metrics for a specific
+      habitat-disturbance type, select from the drop down menus below.
+      Then click the 'RUN' button."),
+    br(),
+    selectInput(inputId = 'habitat', label = "Habitat Type",
+                choices = as.list(unique(IW$habitat)),
+                     selected = 'forest'),
+    br(),
+    selectInput(inputId = 'disturbance', label = "Disturbance Type",
+                    choices = as.list(unique(IW$disturbance)),
+                    selected = 'residential'),
+#    br(),
+#    selectInput(inputId = 'location', label = "Study Site",
+#                choices = as.list(unique(IW$Loc)),
+#                selected = 'CityPark'),
+    br(),
+    actionButton(inputId = 'button', "RUN")
+  )
+)
+
+  
+h <- reactive({input$habitat})
+d <- reactive({input$disturbance})
+
+observeEvent(input$habitat, {
+  df <- isolate({filter(IW, habitat == h())})
+  updateSelectInput(session, "disturbance", label = "Disturbance Type",
+                    choices = as.list(unique(df$disturbance)))
+})
+
+observeEvent(input$button, {
+  #h <- isolate({input$habitat})
+  #d <- isolate({input$disturbance})
+  iw_sub <- isolate({filter(IW, habitat == h(), disturbance == d())%>%select(Change, habitat, disturbance, cv_z, nbr_z, ndsi_z, ndvi_z, ndwi_z, rcvmax_z, train)})
+  # mad_sub <- isolate({filter(MAD, habitat == h(), disturbance == d())})
+  df <- isolate({filter(long, habitat == h(), disturbance == d())})
+  sig <- isolate({
+    cov(filter(IW, Change == 0, habitat == h())[2:6])
+  })
+  
+  mltip <- isolate({
+    mutate(IW, p = dmvnorm(IW[,2:6], mean = rep(0,5), sigma = sig))%>%
+      filter(habitat == h(), disturbance == d())
+  })
+  
+  output$singlegraph <- renderPlotly({
+    plot_ly(type = 'box')%>%
+      add_trace(data = df[grepl("*p", df$Metric) & df$Change == 1,], 
+            y = ~Stat, x = ~Metric,
+            name = "Change", line = list(color = 'orange'))%>%
+      add_trace(data = df[grepl("*p", df$Metric) & df$Change == 0,], 
+            y = ~Stat, x = ~Metric,
+            name = "No", line = list(color= 'blue'))%>%
+      layout(title = paste(d(), "in", h()),
+             xaxis = list(title = 'Change Metric',
+                          tickmode = 'array',
+                          tickvals = c('cv_p', 'rcv_p', 'ndvi_p',
+                                      'ndsi_p', 'ndwi_p', 'nbr_p'),
+                          ticktext = c('CV', 'RCV', 'NDVI', 'NDSI', 'NDWI', 'NBR')),
+             yaxis = list(title = 'P-value'),
+             legend = list(x = 0.9, y = 1),
+             margin = list(b = 100)
+             )
+  })
+  
+  # output$MADsingle <- renderPlotly({
+  #   plot_ly(type = 'box')%>%
+  #     add_trace(data = mad_sub[mad_sub$Change == 1,], y = ~chi,
+  #               name = "Change", line = list(color = 'orange'))%>%
+  #     add_trace(data = mad_sub[mad_sub$Change == 0,], y = ~chi,
+  #               name = "No", line = list(color = 'blue'))%>%    
+  #     layout(yaxis = list(title = "Chi-squared"),
+  #            legend = list(x = 0.8, y = 1))
+  # })
+  
+  lda_out <- reactive({lda(formula = Change ~ cv_z+nbr_z+ndsi_z+ndvi_z+ndwi_z+rcvmax_z,
+               data = filter(iw_sub, train == 1))
+  })
+  
+  lda_pred <- reactive({predict(lda_out(),
+                      newdata = filter(iw_sub, train == 0))
+  })
+  
+  lda_roc <- reactive({roc(iw_sub$Change[iw_sub$train == 0], lda_pred()$x[,1])
+  })
+  
+  lda_int <- reactive({ldaInt(lda_out(), iw_sub[iw_sub$train == 0,], 4:9)})
+  
+  classtree <- reactive({
+    rpart(Change ~ cv_z + rcvmax_z + ndvi_z + ndsi_z + ndwi_z + nbr_z,
+          data = filter(iw_sub, train == 1), method = 'class')
+  })
+  
+  classtree_pred <- reactive({predict(classtree(), newdata = filter(iw_sub, train == 0))})
+  
+  classtree_roc <- reactive({roc(iw_sub$Change[iw_sub$train == 0], predictor = classtree_pred()[,1])})
+  
+  # mad_roc <- reactive({roc(mad_sub$Change, mad_sub$chi)})
+  
+#  output$lda <- renderPlotly({
+#    df <- data.frame(Change = iw_sub$Change, Pred = lda_pred()$x[,1])
+#    plot_ly(type = 'histogram')%>%
+#      add_trace(data = df[df$Change == 1, ],
+#            x = ~Pred, name = "Change", histnorm = 'probability',
+#            marker = list(color = 'orange'), opacity = 0.6)%>%
+#      add_trace(data = df[df$Change == 0, ],
+#                x = ~Pred, name = "No", histnorm = 'probability',
+#                marker = list(color = 'blue'), opacity = 0.6)%>%
+#      layout(barmode = 'overlay',
+#             legend = list(x = 0.75, y = 1),
+#             xaxis = list(title = "LDA Score"))
+#  })
+  
+  output$lda <- renderPlotly({
+    df <- data.frame(Change = iw_sub$Change[iw_sub$train == 0], Pred = lda_pred()$x[,1])
+    plot_ly(type = 'box', orientation = 'h')%>%
+      add_trace(data = df[df$Change == 1, ], x = ~Pred,
+            y = ~Change, name = "Change",
+            line = list(color = 'orange'),
+            boxpoints = "all", pointpos = 0)%>%
+      add_trace(data = df[df$Change == 0, ], x = ~Pred,
+                y = ~Change, name = "No",
+                line = list(color = 'blue'),
+                boxpoints = 'all', pointpos = 0)%>%
+      layout(title = paste("LDA:", d(), "x", h()),
+             legend = list(x = 0.2, y = 1),
+             xaxis = list(title = "LDA Score"))
+  })
+  
+#  output$madlda <- renderPlotly({
+#    plot_ly(type = 'histogram')%>%
+#      add_trace(data = mad_sub[mad_sub$Change == 1, ],
+#            x = ~chi, name = "Change", histnorm = 'probability',
+#            marker = list(color = 'orange'), opacity = 0.6)%>%
+#      add_trace(data = mad_sub[mad_sub$Change == 0, ],
+#                x = ~chi, name = "No", histnorm = 'probability',
+#                marker = list(color = 'blue'), opacity = 0.6)%>%
+#      layout(barmode = 'overlay',
+#             legend = list(x = 0.75, y = 1),
+#             xaxis = list(title = "Chi-squared"))
+#  })
+  
+  # output$madlda <- renderPlotly({
+  #   plot_ly(type = 'box', orientation = 'h')%>%
+  #     add_trace(data = mad_sub[mad_sub$Change == 1, ], x = ~chi,
+  #           y = ~Change, name = "Change",
+  #           line = list(color = 'orange'),
+  #           boxpoints = "all", pointpos = 0)%>%
+  #     add_trace(data = mad_sub[mad_sub$Change == 0, ], x = ~chi,
+  #               y = ~Change, name = "No",
+  #               line = list(color = 'blue'),
+  #               boxpoints = 'all', pointpos = 0)%>%
+  #     layout(
+  #            legend = list(x = 0.75, y = 1),
+  #            xaxis = list(title = "Chi-squared"))
+  # })
+  
+#  output$madldaroc <- renderPlotly({
+#    plot_ly()%>%
+#      add_trace(x = ~1-mad_roc()$specificities, y = ~mad_roc()$sensitivities,
+#                type = 'scatter', mode = 'lines',
+#                hoverinfo = 'text',
+#                text = ~paste('Chi-square:', mad_roc()$thresholds,
+#                             "<br>True Positive:", mad_roc()$sensitivities,
+#                             "<br>False Positive:", 1-mad_roc()$specificities,
+#                             sep = " "))%>%
+    #   layout(title = paste("ROC:", d(), "x", h(), sep = " "),
+    #          xaxis = list(title = "False Positive Rate"),
+    #                       #autorange = 'reversed'),
+    #          yaxis = list(title = "True Positive Rate"))
+    # })
+  
+  
+  output$ldaroc <- renderPlotly({
+    plot_ly()%>%
+      add_trace(x = ~1-lda_roc()$specificities, y = ~lda_roc()$sensitivities,
+                type = 'scatter', mode = 'lines',
+                hoverinfo = 'text',
+                text = ~paste('LDA Score:', lda_roc()$thresholds,
+                             "<br>True Positive:", lda_roc()$sensitivities,
+                             "<br>False Positive:", 1-lda_roc()$specificities,
+                             sep = " "))%>%
+      add_annotations(x = 0.5, y = 0.7, xref = "x", yref = "y", showarrow = F,
+                      text = paste("CV =", lda_out()$scaling[1]), xanchor = 'left')%>%
+            add_annotations(x = 0.5, y = 0.6, xref = "x", yref = "y", showarrow = F,
+                      text = paste("RCV =", lda_out()$scaling[6]), xanchor = 'left')%>%
+            add_annotations(x = 0.5, y = 0.5, xref = "x", yref = "y", showarrow = F,
+                      text = paste("NDVI =", lda_out()$scaling[4]), xanchor = 'left')%>%
+            add_annotations(x = 0.5, y = 0.4, xref = "x", yref = "y", showarrow = F,
+                      text = paste("NDSI =", lda_out()$scaling[3]), xanchor = 'left')%>%
+            add_annotations(x = 0.5, y = 0.3, xref = "x", yref = "y", showarrow = F,
+                      text = paste("NDWI =", lda_out()$scaling[5]), xanchor = 'left')%>%
+            add_annotations(x = 0.5, y = 0.2, xref = "x", yref = "y", showarrow = F,
+                      text = paste("NBR =", lda_out()$scaling[2]), xanchor = 'left')%>%
+            add_annotations(x = 0.5, y = 0.1, xref = "x", yref = "y", showarrow = F,
+                      text = paste("Int =", lda_int()), xanchor = 'left')%>%
+      
+      layout(title = paste("LDA ROC:", d(), "x", h(), sep = " "),
+             xaxis = list(title = "False Positive Rate"),
+             yaxis = list(title = "True Positive Rate"))
+    })
+  
+  bayes_roc <- roc(mltip$Change, mltip$p)
+  
+  output$bayes <- renderPlotly({
+    plot_ly(type = 'box', orientation = 'h')%>%
+      add_trace(data = mltip[mltip$Change == 1, ], x = ~p, y = ~Change,
+                line = list(color = 'orange'), name = 'Change',
+                boxpoints = 'all', pointpos = 0)%>%
+      add_trace(data = mltip[mltip$Change == 0, ], x = ~p, y = ~Change,
+                line = list(color = 'blue'), name = 'No',
+                boxpoints = 'all', pointpos = 0)%>%
+      layout(#barmode = 'overlay',
+        title = paste("Bayesian:", d(), 'x', h()),
+        legend = list(x = 0.75, y = 1),
+        xaxis = list(title = "P-value"),
+        margin = list(b = 100))
+  })
+                 
+  output$bayesroc <- renderPlotly({
+    plot_ly()%>%
+      add_trace(x = ~1-bayes_roc$specificities, y = ~bayes_roc$sensitivities,
+                type = 'scatter', mode = 'lines',
+                hoverinfo = 'text',
+                text = ~paste('P-value:', bayes_roc$thresholds,
+                              '<br>True Positive:', bayes_roc$sensitivities,
+                              '<br>False Positive:', 1-bayes_roc$specificities,
+                              sep = " "))%>%
+      layout(title = paste("Bayesian ROC:", d(), "x", h(), sep = " "),
+             xaxis = list(title = "False Positive Rate"),
+             yaxis = list(title = "True Positive Rate"),
+             margin = list(b = 100))
+    })
+
+  output$classt <- renderPlotly({
+    df <- data.frame(Change = iw_sub$Change[iw_sub$train == 0], Pred = classtree_pred()[,1])
+    plot_ly(type = 'box', orientation = 'h')%>%
+      add_trace(data = df[df$Change == 1, ], x = ~Pred,
+            y = ~Change, name = "Change",
+            line = list(color = 'orange'),
+            boxpoints = "all", pointpos = 0)%>%
+      add_trace(data = df[df$Change == 0, ], x = ~Pred,
+                y = ~Change, name = "No",
+                line = list(color = 'blue'),
+                boxpoints = 'all', pointpos = 0)%>%
+      layout(title = paste("Classification:", d(), "x", h()),
+             legend = list(x = 0.2, y = 1),
+             xaxis = list(title = "Classification Score"))
+  })
+  
+    output$classroc <- renderPlotly({
+    plot_ly()%>%
+      add_trace(x = ~1-classtree_roc()$specificities, y = ~classtree_roc()$sensitivities,
+                type = 'scatter', mode = 'lines',
+                hoverinfo = 'text',
+                text = ~paste('Class Threshold:', classtree_roc()$thresholds,
+                             "<br>True Positive:", classtree_roc()$sensitivities,
+                             "<br>False Positive:", 1-classtree_roc()$specificities,
+                             sep = " "))%>%
+      layout(title = paste("Classification Tree ROC:", d(), "x", h(), sep = " "),
+             xaxis = list(title = "False Positive Rate"),
+             yaxis = list(title = "True Positive Rate"))
+    })
+})
+
+```
+
+Row 
+--------------------------------------------------------------------------
+### IW Algorithm Output: 5 metrics from areas of change and no change.
+
+```{r iw_all, echo = FALSE}
+
+fluidPage(
+  fluidRow(
+    column(6,
+           renderPlotly({
+             subplot(lapply(1:nrow(grid), plot_IW_zs),
+                   nrows = length(unique(IW$disturbance)), shareY = TRUE, titleY = TRUE,
+                   shareX =TRUE,titleX= TRUE)%>%
+             layout(title = "Habitat by Disturbance Combos")
+           })
+    ),
+    
+    column(6,
+           plotlyOutput('singlegraph')
+           )
+  )
+)
+```
+
+Row 
+--------------------------------------------------------------------------
+### Change/No-Change Thresholds: Linear Discriminant Analysis (LDA)
+
+LDA transforms multiple measures into a single score used to discriminate among groups.  The ROC curve compares true positive and false positive detection rates for different LDA thresholds.
+
+```{r iw_lda, echo=FALSE}
+
+#fluidPage(
+  fluidRow(
+    column(5,
+           plotlyOutput("lda")
+           ),
+    column(1),
+    column(5,
+           plotlyOutput("ldaroc")
+           )
+  )
+#)
+
+```
+
+Row
+----
+### Change/No-Change Thresholds: Bayesian Classification
+
+Bayesian classification is another approach used to convert multivariate output to a single measure (p-value) to discriminate between change and no change.
+```{r bayesian, echo = FALSE}
+
+fluidRow(
+  column(5,
+         plotlyOutput('classt')
+         ),
+  column(1),
+  column(5,
+         plotlyOutput('classroc')
+         )
+)
+```
+
+MAD
+==================================
+
+Column {.sidebar} 
+-----------------
+### Examine Subsets
+
+```{r mad_selectors, echo=FALSE}
+fluidPage(
+  fluidRow(
+    p("To display validation data and performance metrics for a specific
+      habitat-disturbance type, select from the drop down menus below.
+      Then click the 'RUN' button."),
+    br(),
+    selectInput(inputId = 'mad_habitat', label = "Habitat Type",
+                choices = as.list(unique(IW$habitat)),
+                     selected = 'forest'),
+    br(),
+    selectInput(inputId = 'mad_disturbance', label = "Disturbance Type",
+                    choices = as.list(unique(IW$disturbance)),
+                    selected = 'residential'),
+#    br(),
+#    selectInput(inputId = 'location', label = "Study Site",
+#                choices = as.list(unique(IW$Loc)),
+#                selected = 'CityPark'),
+    br(),
+    actionButton(inputId = 'mad_button', "RUN")
+  )
+)
+
+  
+mh <- reactive({input$mad_habitat})
+md <- reactive({input$mad_disturbance})
+
+observeEvent(input$mad_habitat, {
+  df <- isolate({filter(MAD, habitat == mh())})
+  updateSelectInput(session, "mad_disturbance", label = "Disturbance Type",
+                    choices = as.list(unique(df$disturbance)))
+})
+
+observeEvent(input$mad_button, {
+  #h <- isolate({input$habitat})
+  #d <- isolate({input$disturbance})
+  #iw_sub <- isolate({filter(IW, habitat == h(), disturbance == d())})
+  mad_sub <- isolate({filter(MAD, habitat == mh(), disturbance == md())})
+  #df <- isolate({filter(long, habitat == h(), disturbance == d())})
+  #sig <- isolate({
+  #  cov(filter(IW, Change == 0, habitat == h())[2:6])
+  #})
+  
+  #mltip <- isolate({
+  #  mutate(IW, p = dmvnorm(IW[,2:6], mean = rep(0,5), sigma = sig))%>%
+  #    filter(habitat == h(), disturbance == d())
+  #})
+  
+  #output$singlegraph <- renderPlotly({
+  #  plot_ly(type = 'box')%>%
+  #    add_trace(data = df[grepl("*p", df$Metric) & df$Change == 1,], 
+  #          y = ~Stat, x = ~Metric,
+  #          name = "Change", line = list(color = 'orange'))%>%
+  #    add_trace(data = df[grepl("*p", df$Metric) & df$Change == 0,], 
+  #          y = ~Stat, x = ~Metric,
+  #          name = "No", line = list(color= 'blue'))%>%
+  #    layout(title = paste(d(), "in", h()),
+  #           xaxis = list(title = 'Change'),
+  #           yaxis = list(title = 'P-value'),
+  #           legend = list(x = 0.9, y = 1)
+  #           )
+  #})
+  
+  output$MADsingle <- renderPlotly({
+    plot_ly(type = 'box')%>%
+      add_trace(data = mad_sub[mad_sub$Change == 1,], y = ~chi,
+                name = "Change", line = list(color = 'orange'))%>%
+      add_trace(data = mad_sub[mad_sub$Change == 0,], y = ~chi,
+                name = "No", line = list(color = 'blue'))%>%    
+      layout(yaxis = list(title = "Chi-squared"),
+             legend = list(x = 0.8, y = 1),
+             title = paste(md(), "in", mh()))
+  })
+  
+  #lda_out <- reactive({lda(formula = Change ~ rcvmax_z+cv_z+nbr_z+ndsi_z+ndvi_z,
+  #             data = iw_sub)
+  #})
+  
+  #lda_pred <- reactive({predict(lda_out(),
+  #                    newdata = iw_sub)
+  #})
+  
+  #lda_roc <- reactive({roc(iw_sub$Change, lda_pred()$x[,1])
+  #})
+  
+  mad_roc <- reactive({roc(mad_sub$Change, mad_sub$chi)})
+  
+#  output$lda <- renderPlotly({
+#    df <- data.frame(Change = iw_sub$Change, Pred = lda_pred()$x[,1])
+#    plot_ly(type = 'histogram')%>%
+#      add_trace(data = df[df$Change == 1, ],
+#            x = ~Pred, name = "Change", histnorm = 'probability',
+#            marker = list(color = 'orange'), opacity = 0.6)%>%
+#      add_trace(data = df[df$Change == 0, ],
+#                x = ~Pred, name = "No", histnorm = 'probability',
+#                marker = list(color = 'blue'), opacity = 0.6)%>%
+#      layout(barmode = 'overlay',
+#             legend = list(x = 0.75, y = 1),
+#             xaxis = list(title = "LDA Score"))
+#  })
+  
+  #output$lda <- renderPlotly({
+  #  df <- data.frame(Change = iw_sub$Change, Pred = lda_pred()$x[,1])
+  #  plot_ly(type = 'box', orientation = 'h')%>%
+  #    add_trace(data = df[df$Change == 1, ], x = ~Pred,
+  #          y = ~Change, name = "Change",
+  #          line = list(color = 'orange'),
+  #          boxpoints = "all", pointpos = 0)%>%
+  #    add_trace(data = df[df$Change == 0, ], x = ~Pred,
+  #              y = ~Change, name = "No",
+  #              line = list(color = 'blue'),
+  #              boxpoints = 'all', pointpos = 0)%>%
+  #    layout(
+  #           legend = list(x = 0.75, y = 1),
+  #           xaxis = list(title = "LDA Score"))
+  #})
+  
+#  output$madlda <- renderPlotly({
+#    plot_ly(type = 'histogram')%>%
+#      add_trace(data = mad_sub[mad_sub$Change == 1, ],
+#            x = ~chi, name = "Change", histnorm = 'probability',
+#            marker = list(color = 'orange'), opacity = 0.6)%>%
+#      add_trace(data = mad_sub[mad_sub$Change == 0, ],
+#                x = ~chi, name = "No", histnorm = 'probability',
+#                marker = list(color = 'blue'), opacity = 0.6)%>%
+#      layout(barmode = 'overlay',
+#             legend = list(x = 0.75, y = 1),
+#             xaxis = list(title = "Chi-squared"))
+#  })
+  
+  output$madlda <- renderPlotly({
+    plot_ly(type = 'box', orientation = 'h')%>%
+      add_trace(data = mad_sub[mad_sub$Change == 1, ], x = ~chi,
+            y = ~Change, name = "Change",
+            line = list(color = 'orange'),
+            boxpoints = "all", pointpos = 0)%>%
+      add_trace(data = mad_sub[mad_sub$Change == 0, ], x = ~chi,
+                y = ~Change, name = "No",
+                line = list(color = 'blue'),
+                boxpoints = 'all', pointpos = 0)%>%
+      layout(
+             legend = list(x = 0.75, y = 1),
+             xaxis = list(title = "Chi-squared"))
+  })
+  
+  output$madldaroc <- renderPlotly({
+    plot_ly()%>%
+      add_trace(x = ~1-mad_roc()$specificities, y = ~mad_roc()$sensitivities,
+                type = 'scatter', mode = 'lines',
+                hoverinfo = 'text',
+                text = ~paste('Chi-square:', mad_roc()$thresholds,
+                             "<br>True Positive:", mad_roc()$sensitivities,
+                             "<br>False Positive:", 1-mad_roc()$specificities,
+                             sep = " "))%>%
+      layout(title = paste("ROC:", md(), "x", mh(), sep = " "),
+             xaxis = list(title = "False Positive Rate"),
+                          #autorange = 'reversed'),
+             yaxis = list(title = "True Positive Rate"))
+    })
+  
+  
+  #output$ldaroc <- renderPlotly({
+  #  plot_ly()%>%
+  #    add_trace(x = ~1-lda_roc()$specificities, y = ~lda_roc()$sensitivities,
+  #              type = 'scatter', mode = 'lines',
+  #              hoverinfo = 'text',
+  #              text = ~paste('LDA Score:', lda_roc()$thresholds,
+  #                           "<br>True Positive:", lda_roc()$sensitivities,
+  #                           "<br>False Positive:", 1-lda_roc()$specificities,
+  #                           sep = " "))%>%
+  #    layout(title = paste("ROC:", d(), "x", h(), sep = " "),
+  #           xaxis = list(title = "False Positive Rate"),
+  #           yaxis = list(title = "True Positive Rate"))
+  #  })
+  
+  #bayes_roc <- roc(mltip$Change, mltip$p)
+  
+  #output$bayes <- renderPlotly({
+  #  plot_ly(type = 'box', orientation = 'h')%>%
+  #    add_trace(data = mltip[mltip$Change == 1, ], x = ~p, y = ~Change,
+  #              line = list(color = 'orange'), name = 'Change',
+  #              boxpoints = 'all', pointpos = 0)%>%
+  #    add_trace(data = mltip[mltip$Change == 0, ], x = ~p, y = ~Change,
+  #              line = list(color = 'blue'), name = 'No',
+  #              boxpoints = 'all', pointpos = 0)%>%
+  #    layout(barmode = 'overlay',
+  #           legend = list(x = 0.75, y = 1),
+  #           xaxis = list(title = "P-value"))
+  #})
+                 
+  output$bayesroc <- renderPlotly({
+    plot_ly()%>%
+      add_trace(x = ~1-bayes_roc$specificities, y = ~bayes_roc$sensitivities,
+                type = 'scatter', mode = 'lines',
+                hoverinfo = 'text',
+                text = ~paste('P-value:', bayes_roc$thresholds,
+                              '<br>True Positive:', bayes_roc$sensitivities,
+                              '<br>False Positive:', 1-bayes_roc$specificities,
+                              sep = " "))%>%
+      layout(title = paste("Bayesian:", md(), "x", mh(), sep = " "),
+             xaxis = list(title = "False Positive Rate"),
+             yaxis = list(title = "True Positive Rate"))
+    })
+})
+
+
+```
+
+Row 
+--------------------------------------------------------------------------
+### MAD Algorithm Output: Chi-square statistic in areas of change and no change.
+
+```{r mad_all, echo = FALSE}
+fluidPage(
+  fluidRow(
+    column(6,
+           renderPlotly({
+             subplot(lapply(1:nrow(grid), plot_MAD_zs),
+                   nrows = length(unique(MAD$disturbance)), shareY = TRUE, titleY = TRUE,
+                   shareX =TRUE,titleX= TRUE)%>%
+             layout(title = "Habitat x Disturbance Combos")
+           })
+    ),
+    
+    column(6,
+           plotlyOutput('MADsingle')
+           )
+  )
+)
+```
+
+Row
+--------------------------------------------------------------------------
+### Change/No-Change Thresholds
+
+The MAD algorithm produces a single measure (Chi-squared statistic) that we can use to discriminate between change and no change.
+
+```{r mad_lda, echo=FALSE}
+
+fluidPage(
+  fluidRow(
+    column(5,
+           plotlyOutput("madlda")
+           ),
+    column(1),
+    column(5,
+           plotlyOutput("madldaroc")
+           )
+  )
+)
+
+```
+

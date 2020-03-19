@@ -1,0 +1,143 @@
+p, li {
+  font-size: larger;
+  font-family: "Open Sans";
+  font-weight: 300;
+}
+
+h1 {
+  font-size: 36px;
+  font-family: "Garamond";
+  font-weight: 700;
+  margin-top: 0 !important;
+}
+
+h2 {
+  background-color: #1a1a1a;
+  border-radius: 3px;
+  color: #fff;
+  font-size: 30px;
+  font-family: "Garamond";
+  font-weight: 600;
+  padding: 5px;
+}
+
+h3 {
+  background-color: #d9d9d9;
+  border-radius: 3px;
+  font-size: 24px;
+  font-family: "Garamond";
+  font-weight: 500;
+  padding: 5px !important;
+  margin-top: 0 !important;
+}
+
+code {
+  font-size: larger;
+  font-family: "Source Code Pro";
+}
+
+.row {
+  padding-top: 20px;
+}
+
+.tocify {
+  border-radius: 2px;
+  font-size: large;
+  font-family: "Garamond";
+  font-weight: 500;
+}
+
+.list-group-item.active,
+.list-group-item.active:focus,
+.list-group-item.active:hover {
+  background-color: #0E3670;
+  border-color: #0E3670;
+}
+
+.header-panel {
+  background-color: #2d2d86;
+    height: 144px;
+  position: relative;
+  z-index: 2;
+}
+
+.header-panel div {
+    position: static;
+    height: 100%;
+}
+
+.header-panel h1 {
+    color: #FFF;
+    /*font-size: 20px;*/
+    /*font-weight: 400;*/
+    position: absolute;
+    bottom: 10px;
+    padding-left: 35px;
+}
+
+.pages > div {
+    padding: 0 5px;
+    padding-top: 64px;
+    margin: 0;
+}
+
+img.image-thumb {
+    width: 400px;
+}
+
+a {
+  color: #2d2d86;
+  font-weight: 600;
+}
+
+.note {
+  font-size: small;
+}
+
+.return {
+  font-weight: bold;
+}
+
+.title {
+  font-family: "Open Sans";
+  font-size: 28pt;
+  font-weight: 800;
+  padding-top: 20px;
+}
+
+.caption {
+  font-style: italic;
+  padding-bottom: 20px;
+  padding-top: 10px;
+  padding-right: 5px;
+}
+
+.figure-caption {
+  padding-bottom: 20px;
+}
+
+.tocify-item .list-group-item:not(:active) {
+  background-color: #ffcc00;
+}
+
+.datatables.html-widget.html-widget-static-bound {
+  width: 100% !important;
+  height: auto !important;
+  padding-bottom: 20px;
+}
+
+table {
+  width: 100% !important;
+  height: auto;
+}
+
+.footnotes {
+  font-size: 12px;
+}
+
+.abstract{
+  background-color: rgba(0, 104, 255, 0.1);
+  font-family: Helvetica, arial, sans-serif;
+  padding-right: 10px;
+  padding-left: 10px;
+}
