@@ -52,6 +52,7 @@ def analyze_iw(aoi, doi, dictionary, size):
         ee.Geometry: ?
     """
     dictionary = ee.Dictionary(dictionary)
+    print(dictionary.get('lda').getInfo())
     try:
         sq_meters = ee.Number(size).multiply(4047)
         projdate = ee.Date(doi);
