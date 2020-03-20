@@ -51,6 +51,7 @@ def analyze_iw(aoi, doi, dictionary, size):
     Returns:
         ee.Geometry: ?
     """
+    dictionary = ee.Dictionary(dictionary)
     try:
         sq_meters = ee.Number(size).multiply(4047)
         projdate = ee.Date(doi);
@@ -95,7 +96,7 @@ def analyze_iw(aoi, doi, dictionary, size):
 #                                [cvz, rcvz, ndviz, ndsiz, ndwiz, nbrz]).clip(aoi)
 
         # create a binary [0, 1] image representing change and no-change pixels.  Erode and dilate changed areas
-        selected = scored.gte(dictionary['lda'])\
+        selected = scored.gte(dictionary.get('lda'))\
         .focal_min(1, 'square', 'pixels')\
         .focal_max(1, 'square', 'pixels')
 
