@@ -22,27 +22,31 @@ aoi = ee.Geometry.Polygon(
 
 projdate = ee.Date('2018-08-01')
 dictionary = dictionaries.forest
-cvz = ee.Number(dictionary.get('cvz'))
-rcvz = ee.Number(dictionary.get('rcvz'))
-ndviz = ee.Number(dictionary.get('ndviz'))
-ndsiz = ee.Number(dictionary.get('ndsiz'))
-ndwiz = ee.Number(dictionary.get('ndwiz'))
-nbrz = ee.Number(dictionary.get('nbrz'))
-lda = ee.Number(dictionary.get('lda'))
-intercept = ee.Number(dictionary.get('int'))
-cd_id = 'test'
 
-output = analyze.analyze(aoi, projdate, cvz, nbrz, ndsiz, ndviz, ndwiz, rcvz, 0, intercept, lda, cd_id)
+#TODO: remove these after confirming conversion to dictionary based arguments
+#for analyze works
+#cvz = ee.Number(dictionary.get('cv_z'))
+#rcvz = ee.Number(dictionary.get('rcv_z'))
+#ndviz = ee.Number(dictionary.get('ndvi_z'))
+#ndsiz = ee.Number(dictionary.get('ndsi_z'))
+#ndwiz = ee.Number(dictionary.get('ndwi_z'))
+#nbrz = ee.Number(dictionary.get('nbr_z'))
+#lda = ee.Number(dictionary.get('lda'))
+#intercept = ee.Number(dictionary.get('int'))
+#cd_id = 'test'
+
+output = analyze.analyze_iw(aoi, projdate, dictionary, 0)
+#output = analyze.analyze(aoi, projdate, cvz, nbrz, ndsiz, ndviz, ndwiz, rcvz, 0, intercept, lda, cd_id)
 
 print(output)
 
 ee.mapclient.addToMap(output[3])
 
-ee.Export.table.toDrive({
-  collection: output[3],
-  description: studyarea + '_pythonPolys',
-  fileFormat: 'GeoJSON'
-})
+task = ee.batch.Export.table.toDrive(
+  collection = output[3],
+  description = 'HazardKY_pythonPolys',
+  fileFormat = 'GeoJSON'
+)
 
 arr = numpy.random.rand(49, 49)
 red = arr[6:-6, 6:-6]

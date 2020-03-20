@@ -67,20 +67,28 @@ def standardize(img):
   return img.subtract(mean).divide(sd)
 
 
-def ldaScore(img, inter, xbands, coefficients):
-  """
-  Function converting multiband image into single band image of LDA scores
+#def ldaScore(img, inter, xbands, coefficients):
+def ldaScore(img, bands, dictionary):
+    """
+    Function converting multiband image into single band image of LDA scores
   
-  Parameters:
-      img (ee.Image): multiband image
-      int (float): intercept parameter from LDA analysis
-      xbands (ee.List<string>): string list of n band names
-      coefficients (ee.List<float>): numeric list of length n containing LDA coefficients
-  Returns:
-    ee.Image: image with one band containing LDA scores based on provided coefficients
-  """
-  bands = img.select(xbands)
-  coeffs = ee.Dictionary.fromLists(xbands, coefficients).toImage(xbands)
-  score = bands.multiply(coeffs).addBands(ee.Image(inter)).reduce(ee.Reducer.sum())
-  return score
+    Parameters:
+        img (ee.Image): multiband image
+        int (float): intercept parameter from LDA analysis
+        xbands (ee.List<string>): string list of n band names
+        coefficients (ee.List<float>): numeric list of length n containing LDA coefficients
+    Returns:
+      ee.Image: image with one band containing LDA scores based on provided coefficients
+    """
+#    bands = img.select(xbands)
+#    coeffs = ee.Dictionary.fromLists(xbands, coefficients).toImage(xbands)
+#    score = bands.multiply(coeffs).addBands(ee.Image(inter)).reduce(ee.Reducer.sum())
+#    return score
+    
+    img = img.select(bands)
+    dictionary = ee.Dictionary(dictionary)
+    coeffs = dictionary.toImage(bands)
+    intercept = dictionary.toImage(['int'])
+    score = img.multiply(coeffs).addBands(intercept).reduce(ee.Reducer.sum())
+    return score
 

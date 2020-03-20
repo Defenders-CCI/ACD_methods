@@ -30,8 +30,8 @@ def sz(ft):
 def displaySize(size):
     print('size:', size)
 
-
-def analyze_iw(aoi, doi, cvz, nbrz, ndsiz, ndviz, ndwiz, rcvz, size, intercept, lda):
+#def analyze_iw(aoi, doi, cvz, nbrz, ndsiz, ndviz, ndwiz, rcvz, size, intercept, lda):
+def analyze_iw(aoi, doi, dictionary, size):
     """
     Function that pre-processes sentinel-2 imagery and runs the LCC change detection algorithm
     
@@ -85,12 +85,19 @@ def analyze_iw(aoi, doi, cvz, nbrz, ndsiz, ndviz, ndwiz, rcvz, size, intercept, 
         # by default, ag fields are masked by 'yes'
         iwout = iw.runIW(before, after, aoi, 'yes').clip(aoi)
 
-        # calculate LDA score to discriminate change/no-change pixels in iwout.  Requires thresholds from habitat dictionary
-        scored = stats.ldaScore(iwout, 0, ['cv_z', 'rcvmax_z', 'ndvi_z', 'ndsi_z', 'ndwi_z', 'nbr_z'],
-                                [cvz, rcvz, ndviz, ndsiz, ndwiz, nbrz]).clip(aoi)
+        # calculate LDA score to discriminate change/no-change pixels in iwout.  Requires thresholds from habitat dictionary        
+        scored = stats.ldaScore(
+                iwout,
+                ['cv_z', 'rcvmax_z', 'ndvi_z', 'ndsi_z', 'ndwi_z', 'nbr_z'],
+                dictionary)
+        
+#        scored = stats.ldaScore(iwout, 0 ['cv_z', 'rcvmax_z', 'ndvi_z', 'ndsi_z', 'ndwi_z', 'nbr_z'],
+#                                [cvz, rcvz, ndviz, ndsiz, ndwiz, nbrz]).clip(aoi)
 
         # create a binary [0, 1] image representing change and no-change pixels.  Erode and dilate changed areas
-        selected = scored.gte(lda).focal_min(1, 'square', 'pixels').focal_max(1, 'square', 'pixels')
+        selected = scored.gte(dictionary['lda'])\
+        .focal_min(1, 'square', 'pixels')\
+        .focal_max(1, 'square', 'pixels')
 
         # mask image to retain only pixels equal to '1'
         selected = selected.updateMask(selected)
