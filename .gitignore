@@ -8,3 +8,4 @@ AlgorithmValidation/data
 AlgorithmValidation/data/MAD.rds
 AlgorithmValidation/data/IW.rds
 data.RData
+__pycache__

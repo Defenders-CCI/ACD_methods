@@ -9,14 +9,8 @@ https://code.earthengine.google.com/2a1ed3f6bcfd360aae96f9d788ff0985
 import numpy
 import ee
 import ee.mapclient
-import sys
-sys.path.append("C:/Users/mevans/OneDrive - Defenders of Wildlife/repos/ACD_methods/EEcode/Python")
-
 import analyze
 import dictionaries
-
-ee.Initialize()
-ee.Authenticate()
 
 aoi = ee.Geometry.Polygon(
         [[[-83.37017153264765, 37.48081395204879],
