@@ -16,10 +16,13 @@ def norm_p(z):
     return ee.Image.constant(1).subtract(z.multiply(-1.65451).exp().add(1).pow(-1))
 
 def chi_p(chi, df):
-    #Function calulating CDF probability of chi-square statistic
-#param chi: single band image of scores from standard chi-squared distribution
-#param df: degrees of freedom (usually # of bands)
-#Return: single band image of probabilities
+    """ Caclulate the CDF probability of a chi-square statistic
+    Parameters:
+        chi (ee.Image): single band image with observations from a chi-squared dist
+        df (int): degrees of freedom
+    Returns:
+        ee.Image: single band image of probabilities
+    """
     cdf = ee.Image(chi.divide(2)).gammainc(ee.Number(df).divide(2))
     return cdf.rename(['p'])
 

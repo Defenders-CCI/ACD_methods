@@ -30,6 +30,15 @@ def rescale(img, exp, thresholds):
     return img.expression(exp, {'img': img}).subtract(thresholds[0]).divide(thresholds[1] - thresholds[0])
 
 def waterScore(img):
+    """ 
+    Calculate a water likelihood score [0, 1]
+    
+    Parameters:
+        img (ee.Image): Sentinel-2 image
+        
+    Returns:
+        ee.Image: image with single ['waterscore'] band
+    """
     print('waterScore:', img)
     img = sentinel2toa(img)
     # Compute several indicators of water and take the minimum of them.
@@ -66,6 +75,13 @@ def waterScore(img):
     return score.clamp(0, 1).rename(['waterScore'])
 
 def basicQA(img):
+    """
+    Mask clouds in a Sentinel-2 image using builg in quality assurance band
+    Parameters:
+        img (ee.Image): Sentinel-2 image with QA band
+    Returns:
+        ee.Image: original image masked for clouds and cirrus
+    """
     #print('basicQA:', img)
     qa = img.select('QA60').int16()
     # print('qa:', type(qa))
@@ -118,6 +134,13 @@ def darkC (img, R, G, B):
   return img.addBands(C1).addBands(C2).addBands(C3)
 
 def sentinelCloudScore(img):
+    """
+    Compute a custom cloud likelihood score for Sentinel-2 imagery
+    Parameters:
+        img (ee.Image): Sentinel-2 image
+    Returns:
+        ee.Image: original image with added ['cloudScore'] band
+    """
   #print('sentinelCloudScore:', img)
   im = sentinel2toa(img)
   # Compute several indicators of cloudyness and take the minimum of them.
