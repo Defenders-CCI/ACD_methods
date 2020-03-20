@@ -1,7 +1,6 @@
 import ee
 
 from datetime import datetime
-from datetime import timedelta
 import clouds
 import iw
 import MAD_mc
@@ -113,8 +112,8 @@ def analyze_iw(aoi, doi, cvz, nbrz, ndsiz, ndviz, ndwiz, rcvz, size, intercept, 
             maxPixels=1e13)
 
         #print('polys is a ', type(polys))
-         count = polys.size()
-         print(count.getInfo())
+        count = polys.size()
+        print(count.getInfo())
         #print('polys size:', count.getInfo(displaySize))
 
         # return only polygons corresponding to change pixels
@@ -142,7 +141,6 @@ def analyze_iw(aoi, doi, cvz, nbrz, ndsiz, ndviz, ndwiz, rcvz, size, intercept, 
         print ("")
         print ("*******************************")
         print ("Unexpected error in analyze.py")
-        print ("cd_id:", cd_id)
         print (exc_type, fname, exc_tb.tb_lineno)
         #print("sys.exc_info:", sys.exc_info()[0])
         print ("Error:", error)
