@@ -71,3 +71,8 @@ def create_acd_aois(n):
             )
     
     return aois, coords
+
+if __name__ == '__main__':
+    print('How many aois should we create?')
+    size = input()
+    create_acd_aois(size)
