@@ -12,7 +12,7 @@ def buffer(ft):
     """
     Buffer an input feature by 10km
     """
-    return ft.buffer(10000)
+    return ft.buffer(10000).bounds(5)
 
 def set_id(ft):
     return ft.set('id', ft.id())
