@@ -32,7 +32,7 @@ def create_acd_aois(n):
     # get landcover data
     nlcd = ee.Image("USGS/NLCD/NLCD2016");
     # get world country boundaries
-    countries = ee.FeatureCollection("USDOS/LSIB/2013")
+    states = ee.FeatureCollection("USDOS/LSIB/2013")
     # create list of excluded us states
     exclusions = ee.List(
             ['Alaska', 'Hawaii', 'Guam', 'American Samoa', 'Puerto Rico', 'United States Virgin Islands', 'Commonwealth of the Northern Mariana Islands']
