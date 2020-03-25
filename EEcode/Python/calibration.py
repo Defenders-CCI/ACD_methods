@@ -196,12 +196,12 @@ def equalize_collection(imgCol, bands, sceneID):
   # create an image collection of scene medians
   medians = scene_median(imgCol, bands, sceneID)
   # define a function to return the centroid longitude of each scene
-  def get_coord_min(str):
+  def get_longitude(str):
     centroids = imgCol.filter(ee.Filter.eq(sceneID, str)).geometry(1).centroid(1)
     longs = centroids.coordinates().get(0)
     return longs
   # create a list of centroid longitudes
-  coords = scenes.map(get_coord_min)
+  coords = scenes.map(get_longitude)
   # sort the scenes by increasing longitude
   scenes = scenes.sort(coords)
   # define a function that will equalize the list of scenes in succession
