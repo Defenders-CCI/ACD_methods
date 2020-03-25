@@ -32,7 +32,7 @@ def create_acd_aois(n):
     # get landcover data
     nlcd = ee.Image("USGS/NLCD/NLCD2016");
     # get world country boundaries
-    states = ee.FeatureCollection("USDOS/LSIB/2013")
+    states = ee.FeatureCollection("TIGER/2018/States")
     # create list of excluded us states
     exclusions = ee.List(
             ['Alaska', 'Hawaii', 'Guam', 'American Samoa', 'Puerto Rico', 'United States Virgin Islands', 'Commonwealth of the Northern Mariana Islands']
@@ -51,7 +51,7 @@ def create_acd_aois(n):
       points = n
     )
     
-    coords = random.geometry(5).coordinates(5)
+    coords = random.geometry(5).coordinates()
 
     # create 10k radius boxes around random points
     boxes = random.map(buffer_and_id)

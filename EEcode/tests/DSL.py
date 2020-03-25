@@ -39,7 +39,7 @@ print(output)
 
 ee.mapclient.addToMap(output[3])
 
-task = batch.ee.Export.table.toDrive(
+task = ee.batch.Export.table.toDrive(
   collection= output[3],
   description= studyarea + '_pythonPolys',
   fileFormat= 'GeoJSON'
