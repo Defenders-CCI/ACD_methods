@@ -12,6 +12,8 @@ import ee.mapclient
 import analyze
 import dictionaries
 
+ee.Initialize()
+
 aoi = ee.Geometry.Polygon(
         [[[-83.37017153264765, 37.48081395204879],
           [-83.37486536622822, 37.31933288374584],
@@ -35,8 +37,6 @@ dictionary = dictionaries.forest
 
 output = analyze.analyze_iw(aoi, projdate, dictionary, 0)
 #output = analyze.analyze(aoi, projdate, cvz, nbrz, ndsiz, ndviz, ndwiz, rcvz, 0, intercept, lda, cd_id)
-
-print(output)
 
 ee.mapclient.addToMap(output[3])
 
