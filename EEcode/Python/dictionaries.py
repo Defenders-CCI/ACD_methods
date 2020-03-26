@@ -11,7 +11,7 @@ import ee
 forest = ee.Dictionary({
   'int': 0,
   'cv_z': 0.020213447,
-  'rcv_z': -0.241673763,
+  'rcvmax_z': -0.241673763,
   'ndvi_z': 0.171443325,
   'ndsi_z': 0.242237481,
   'ndwi_z': -0.021797543,
@@ -22,7 +22,7 @@ forest = ee.Dictionary({
 scrub = ee.Dictionary({
   'int': 0,
   'cv_z': -0.004616377,
-  'rcv_z': -0.756532635,
+  'rcvmax_z': -0.756532635,
   'ndvi_z': -0.034184409,
   'ndsi_z': -0.005930105,
   'ndwi_z': -0.208912147,
@@ -32,7 +32,7 @@ scrub = ee.Dictionary({
 desert = ee.Dictionary({
   'int': 0,
   'cv_z': 0.03535703,
-  'rcv_z': 0.37298094,
+  'rcvmax_z': 0.37298094,
   'ndvi_z': 0.81159062,
   'ndsi_z': 0.31934502,
   'ndwi_z': -0.04074573,
@@ -42,7 +42,7 @@ desert = ee.Dictionary({
 wetland = ee.Dictionary({
   'int': 0,
   'cv_z': 0.01539318,
-  'rcv_z': -0.53627410,
+  'rcvmax_z': -0.53627410,
   'ndvi_z': -0.05276547,
   'ndsi_z': 0.04784782,
   'ndwi_z': -0.21047313,
