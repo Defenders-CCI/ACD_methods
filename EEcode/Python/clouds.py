@@ -39,7 +39,6 @@ def waterScore(img):
     Returns:
         ee.Image: image with single ['waterscore'] band
     """
-    print('waterScore:', img)
     img = sentinel2toa(img)
     # Compute several indicators of water and take the minimum of them.
     score = ee.Image(1.0)
@@ -168,7 +167,7 @@ def sentinelCloudScore(img):
     score=score.min(rescale(ndsi, 'img', [0.8, 0.6]))
       
     score = score.multiply(100).byte()
-    print('score:', type(score))
+    #print('score:', type(score))
      
     return img.addBands(score.rename(['cloudScore']))
 

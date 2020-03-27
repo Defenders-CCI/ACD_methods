@@ -14,11 +14,15 @@ import dictionaries
 
 ee.Initialize()
 
-aoi = ee.Geometry.Polygon(
+aoi = ee.Feature(
+        ee.Geometry.Polygon(
         [[[-83.37017153264765, 37.48081395204879],
           [-83.37486536622822, 37.31933288374584],
           [-83.05319468739128, 37.30974497135589],
-          [-83.05556035288436, 37.47934591201635]]])
+          [-83.05556035288436, 37.47934591201635]]]),
+    {'landcover':'forest',
+     'id':'test'}
+    )
 
 projdate = ee.Date('2018-08-01')
 dictionary = dictionaries.forest
@@ -35,8 +39,7 @@ dictionary = dictionaries.forest
 #intercept = ee.Number(dictionary.get('int'))
 #cd_id = 'test'
 
-output = analyze.analyze_iw(aoi, projdate, dictionary, 0)
-#output = analyze.analyze(aoi, projdate, cvz, nbrz, ndsiz, ndviz, ndwiz, rcvz, 0, intercept, lda, cd_id)
+output = analyze.analyze_iw(aoi, projdate, dictionary, 0, 'test')
 
 ee.mapclient.addToMap(output[3])
 

@@ -26,9 +26,9 @@ def illuminate(img, elev):
 # Function calculating and correcting hillshade for each image in a collection.
 # Return Image Collection
 def c_correct(imgCol, bands, aoi, elev):
-    print('c_correct')
+    print('Running c_correct algorithm')
     otherbands = ee.Image(imgCol.first()).bandNames().removeAll(bands)
-    print('otherbands:', otherbands)
+    #print('otherbands:', otherbands)
     illumCol = imgCol.map(lambda image: image.addBands(ee.Image(1)).addBands(illuminate(image, elev.clip(aoi))))
     #illumCol.map(illumImg)
 
