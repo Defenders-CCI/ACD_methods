@@ -31,27 +31,31 @@ def displaySize(size):
     print('size:', size)
 
 #def analyze_iw(aoi, doi, cvz, nbrz, ndsiz, ndviz, ndwiz, rcvz, size, intercept, lda):
-def analyze_iw(aoi, doi, dictionary, size):
+def analyze_iw(aoi, doi, dictionary, size, aoiId):
     """
     Function that pre-processes sentinel-2 imagery and runs the LCC change detection algorithm
     
     Parameters:
-        aoi(ee.Geometry): area of interest
+        aoi(ee.Feature): area of interest with property 'landcover'
         doi(ee.Date): date of interest
-        cvz(float): LDA coefficeint associated with the cv metric
-        nbrz (float): LDA coefficient associated with the NBR metric
-        ndsiz (float): LDA coefficient associated with the NDSI metric
-        ndviz (float): ...
-        ndwiz (float): ...
-        rcvz (float): LDA coefficient associated with the rcv_max metric
+        dictionary (ee.Dictionary):
         size (float): minimum size (ac) of changes to output
-        intercept (float): LDA intercept coefficient
-        lda (float): LDA score threshold defining change/no-change
+        aoiId (str): unique identifier for the area of interest
         
     Returns:
-        ee.Geometry: ?
+        tuple: ee.FeatureCollection with properties 'id', and 'landcover',
+        ee.Image with bands
     """
+    # cast dictionary to ee.Dictionary for use in subsequent GEE ops
     dictionary = ee.Dictionary(dictionary)
+    # grab the landcover property from aoi and then cast to geometry
+    lc = ee.Feature(aoi).get('landcover')
+    aoi = aoi.geometry()
+    
+    # function to add unique id and landcover type to output feature properties
+    def add_props(ft):
+        ftId = aoiId + '_' + ft.id()
+        return ft.set('id', ftId, 'landcover', lc)
 
     try:
         sq_meters = ee.Number(size).multiply(4047)
@@ -126,24 +130,15 @@ def analyze_iw(aoi, doi, dictionary, size):
         #print('polys size:', count.getInfo(displaySize))
 
         # return only polygons corresponding to change pixels
-        polys = polys.map(sz)
+        polys = polys.map(sz).map(add_props)
 
         # filter out change polygons smaller than the user defined minimum area
         polys = polys.filter(ee.Filter.gte('area', sq_meters))
 
         # indicator = True
 
-
-#        task_keyed = ee.batch.Export.table.toCloudStorage(
-#            collection=polys,
-#            description=cd_id,
-#            fileFormat= 'GeoJSON',
-#            bucket='alerts-storage',
-#            path='geojson/' + cd_id
-#        )
-#        task_keyed.start()
-
-        return "OK", past_date, recent_date, polys
+        return "OK", past_date, recent_date, polys, iwout.select([
+                'cv_z', 'nbr_z', 'ndsi_z', 'ndwi_z', 'ndvi_z', 'rcvmax_z'])
     except Exception as error:
         exc_type, exc_obj, exc_tb = sys.exc_info()
         fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]

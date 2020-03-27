@@ -51,12 +51,13 @@ def create_acd_aois(n):
       points = n
     )
     
+    # get list of aoi centroid coordinates for metadata
     coords = random.geometry(5).coordinates()
 
     # create 10k radius boxes around random points
     boxes = random.map(buffer_and_id)
     
-    # add the 
+    # add the most common landcover within aoi as a property
     aois = nlcd.select('landcover').reduceRegions(
             collection = boxes,
             reducer = ee.Reducer.mode(),
@@ -72,6 +73,32 @@ def create_acd_aois(n):
     
     return aois, coords
 
+def sample_output(output, polygons, aoi_id):
+    """
+    Collect algorithm output metrics within polgons and export as csv
+    Parameters:
+        output (ee.Image): n-band image output of either iw or mad
+        polgyons (ee.FeatureCollection): polygons within which to sample
+        aoi_id (str): unique identifier for aoi to be used as output file name
+    Returns:
+        ee.batch.Export.table.toDrive task
+    """
+
+    data = output.sampleRegions(
+            collection = polygons,
+            properties = [],
+            scale = 10,
+            tileScale = 8)
+    
+    task = ee.batch.Export.table.toDrive(
+            collection = data,
+            #folder = {GDrive subdirectory path},
+            description = aoi_id,
+            fileFormat = 'CSV'
+            )
+    
+    task.start()
+    
 if __name__ == '__main__':
     print('How many aois should we create?')
     size = input()
