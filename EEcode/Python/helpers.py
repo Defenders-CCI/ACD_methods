@@ -47,7 +47,7 @@ def create_acd_aois(n):
 
     # generate 1000 random points within the us
     random = ee.FeatureCollection.randomPoints(
-      region = usa,
+      region = usa.geometry(),
       points = n
     )
     
