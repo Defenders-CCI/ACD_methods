@@ -66,8 +66,8 @@ def create_acd_aois(n):
     # filter polygons that primarily include ag or pasture
     aois = aois.filter(
             ee.Filter.And(
-                    ee.Filter.neq('landcover', 81),
-                    ee.Filter.neq('landcover', 82)
+                    ee.Filter.neq('mode', 81),
+                    ee.Filter.neq('mode', 82)
                     )
             )
     

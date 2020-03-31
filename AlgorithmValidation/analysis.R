@@ -1,7 +1,7 @@
 library(dplyr)
 library(googledrive)
 library(MASS)
-library(mvtnorm)
+#library(mvtnorm)
 library(plotly)
 library(pROC)
 library(stringr)
@@ -9,6 +9,8 @@ library(tidyr)
 
 # Load helper functions
 source('AlgorithmValidation/functions.R')
+
+dataPath <- 'AlgorithmValidation/data'
 
 # Get our master data from Google Drive
 IW_folder <- '16XRyxU7PXpvGI4eYro9HNJLUBC1kg-z5'
@@ -19,8 +21,12 @@ IWid <- as_id(filter(IWfiles, grepl("IW.rds", name)))
 MADfiles <- drive_ls(as_id(MAD_folder))
 MADid <- as_id(filter(MADfiles, grepl("MAD.rds", name)))
 
-drive_download(file = IWid, path = 'AlgorithmValidation/data/IW.rds', overwrite = TRUE)
-drive_download(file = MADid, path = 'AlgorithmValidation/data/MAD.rds', overwrite = TRUE)
+drive_download(file = IWid, path = paste(dataPath, 'IW.rds', sep = "/"), overwrite = TRUE)
+drive_download(file = MADid, path = paste(dataPath, 'MAD.rds', sep = "/"), overwrite = TRUE)
+
+# Load data into workspace
+IW <- readRDS(file = paste(dataPath, 'IW.rds', sep = "/"))
+MAD <- readRDS(file = paste(dataPath, 'MAD.rds', sep = "/"))
 
 #randomForest
 forest.out <- randomForest(as.factor(Change) ~ rcvmax_z+cv_z+nbr_z+ndsi_z+ndvi_z,
@@ -50,10 +56,6 @@ grassland <- lda_analysis("Grassland", "")
 plot_ROC_crv(grassland$IW, grassland$MAD)
 grassland_bare <- lda_analysis("Grassland", "Bare|None")
 grassland_solar <- lda_analysis("Grassland", "Solar|None")
-
-grassland_a <- lda_analysis("Grassland", "[^Bare]")
-plot_ROC_crv(grassland_a$IW, grassland_a$MAD)
-
 
 wetland <- lda_analysis("Wetland", "")
 plot_ROC_crv(wetland$IW, wetland$MAD)

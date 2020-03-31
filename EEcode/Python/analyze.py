@@ -38,7 +38,7 @@ def analyze_iw(aoi, doi, dictionary, size, aoiId):
     Parameters:
         aoi(ee.Feature): area of interest with property 'landcover'
         doi(ee.Date): date of interest
-        dictionary (ee.Dictionary):
+        dictionary (ee.Dictionary): appropriate dictionary of lda coefficients
         size (float): minimum size (ac) of changes to output
         aoiId (str): unique identifier for the area of interest
         
@@ -49,7 +49,7 @@ def analyze_iw(aoi, doi, dictionary, size, aoiId):
     # cast dictionary to ee.Dictionary for use in subsequent GEE ops
     dictionary = ee.Dictionary(dictionary)
     # grab the landcover property from aoi and then cast to geometry
-    lc = ee.Feature(aoi).get('landcover')
+    lc = ee.Feature(aoi).get('mode')
     aoi = aoi.geometry()
     
     # function to add unique id and landcover type to output feature properties
