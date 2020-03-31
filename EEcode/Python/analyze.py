@@ -54,7 +54,7 @@ def analyze_iw(aoi, doi, dictionary, size, aoiId):
     
     # function to add unique id and landcover type to output feature properties
     def add_props(ft):
-        ftId = aoiId + '_' + ft.id()
+        ftId = aoiId + '_' + ft.id().getInfo()
         return ft.set('id', ftId, 'landcover', lc)
 
     try:
