@@ -69,12 +69,10 @@ lda_analysis <- function(hab, dist){
 
   # perform linear discriminant analysis
   MADlda <- lda(formula = change ~ chi+v1+v2+v3+v4+v5+v6,
-                data = filter(mad, Train == 1),
-                CV = TRUE)
+                data = filter(mad, Train == 1))
 
   IWlda <- lda(formula = change ~ cv_z+nbr_z+ndsi_z+ndvi_z+ndwi_z+rcvmax_z,
-               data = filter(iw, Train == 1),
-               CV = TRUE)
+               data = filter(iw, Train == 1))
 
   IWpred <- predict(IWlda, newdata = filter(iw, Train == 0))
   MADpred <- predict(MADlda, newdata = filter(mad, Train == 0))

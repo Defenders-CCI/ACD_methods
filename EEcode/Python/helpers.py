@@ -81,7 +81,7 @@ def sample_output(output, polygons, aoi_id):
         polgyons (ee.FeatureCollection): polygons within which to sample
         aoi_id (str): unique identifier for aoi to be used as output file name
     Returns:
-        ee.batch.Export.table.toDrive task
+        export task sending a csv file to google drive
     """
 
     data = output.sampleRegions(

@@ -126,8 +126,8 @@ def analyze_iw(aoi, doi, dictionary, size, aoiId):
             maxPixels=1e13)
 
         #print('polys is a ', type(polys))
-        count = polys.size()
-        print(count.getInfo())
+        count = polys.size().getInfo()
+        print(count)
         #print('polys size:', count.getInfo(displaySize))
 
         # return only polygons corresponding to change pixels
