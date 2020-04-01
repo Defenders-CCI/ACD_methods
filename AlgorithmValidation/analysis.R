@@ -43,7 +43,7 @@ plot_ROC_crv(shrub$IW, shrub$MAD)
 shrub_bare <- lda_analysis("Shrub", "Bare|None")
 shrub_solar <- lda_analysis("Shrub", "Solar|None")
 
-forest <- lda_analysis("Forest", "")
+forest <- lda_analysis("Forest", "Bare|None")
 plot_ROC_crv(forest$IW, forest$MAD)
 
 desert <- lda_analysis("Desert", "")
