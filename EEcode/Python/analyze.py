@@ -52,10 +52,12 @@ def analyze_iw(aoi, doi, dictionary, size, aoiId):
     lc = ee.Feature(aoi).get('mode')
     aoi = aoi.geometry()
     
+    # TODO: This isn't working to add a unique ID
     # function to add unique id and landcover type to output feature properties
     def add_props(ft):
-        ftId = aoiId + '_' + ft.id().getInfo()
-        return ft.set('id', ftId, 'landcover', lc)
+        ftId = aoiId + '_' + '1'
+        print(ftId)
+        return ft.set({'id': ftId, 'landcover': lc})
 
     try:
         sq_meters = ee.Number(size).multiply(4047)
@@ -91,7 +93,8 @@ def analyze_iw(aoi, doi, dictionary, size, aoiId):
         # by default, ag fields are masked by 'yes'
         print('running the iw algorithm')
         iwout = iw.runIW(before, after, aoi, 'yes').clip(aoi)
-
+        
+        print('performing LDA analysis')
         # calculate LDA score to discriminate change/no-change pixels in iwout.  Requires thresholds from habitat dictionary        
         scored = stats.ldaScore(
                 iwout,
@@ -131,7 +134,8 @@ def analyze_iw(aoi, doi, dictionary, size, aoiId):
         #print('polys size:', count.getInfo(displaySize))
 
         # return only polygons corresponding to change pixels
-        polys = polys.map(sz).map(add_props)
+        polys = polys.map(sz)
+        polys = polys.map(add_props)
 
         # filter out change polygons smaller than the user defined minimum area
         polys = polys.filter(ee.Filter.gte('area', sq_meters))
