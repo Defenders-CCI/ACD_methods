@@ -6,6 +6,7 @@ Created on Wed Mar 25 12:41:37 2020
 """
 
 import ee
+from random import randint
 ee.Initialize()
 
 def buffer(ft):
@@ -44,11 +45,14 @@ def create_acd_aois(n):
                     .union()\
                     .first()
                     )
-
+            
+    seed = randint(0, 100)
+    
     # generate 1000 random points within the us
     random = ee.FeatureCollection.randomPoints(
       region = usa.geometry(),
-      points = n
+      points = n,
+      seed = seed
     )
     
     # get list of aoi centroid coordinates for metadata
