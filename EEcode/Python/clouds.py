@@ -180,9 +180,9 @@ def mask(img):
     cdi = ee.Algorithms.Sentinel2.CDI(img)
     scored = basicQA(img)
     clouds = sentinelCloudScore(scored).lte(15).Or(cdi.gte(-0.2))
-    water = waterScore(img).select('waterScore').lte(0.5)
+    water = waterScore(img).select('waterScore').lte(0.25)
     jrc = ee.Image(JRC.filterMetadata('month', 'equals', month).filterMetadata('year', 'equals', year).first())
-    waterMask = jrc.focal_max(1, 'square', 'pixels').eq(2).Or(water)
+    waterMask = jrc.focal_max(1, 'square', 'pixels').neq(2).And(water)
     shadowMask = img.select('B11').gt(900)
     return scored.updateMask(clouds.And(shadowMask).And(waterMask))
 
