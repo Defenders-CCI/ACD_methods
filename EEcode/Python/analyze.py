@@ -16,13 +16,6 @@ CDL = ee.Image("USDA/NASS/CDL/2017")
 S2 = ee.ImageCollection("COPERNICUS/S2")
 DEM = ee.Image("USGS/SRTMGL1_003")
 
-def mask(img):
-    scored = clouds.basicQA(img)
-    scored = clouds.sentinelCloudScore(scored)
-    waterMask = clouds.waterScore(img).select('waterScore').lte(0.5)
-    shadowMask = img.select('B11').gt(900)
-    return scored.updateMask(scored.select('cloudScore').lte(15).And(shadowMask).And(waterMask))
-
 def sz(ft):
     area = ft.area(5)
     return ft.set({'area': area})
@@ -175,8 +168,11 @@ def analyze_mad(aoi, doi, size, niters):
     
     nbands = len(rgbn)
     print(nbands)
-    masked = S2.filterDate(prior, today).filterBounds(aoi).map(mask)
     
+    masked = ee.Algorithms.If(doi.gte(ee.Date('2019-01-01')),
+                 S2.filterDate(prior, today).filterBounds(aoi).map(clouds.maskS2SR),
+                 S2.filterDate(prior, today).filterBounds(aoi).map(clouds.mask))
+
     corrected = terrain.c_correct(masked, rgbn, aoi, DEM)
 
     after = corrected.filterDate(projdate, today)

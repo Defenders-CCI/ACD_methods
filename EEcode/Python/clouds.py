@@ -4,6 +4,8 @@ import ee
 # Initialize Earth Engine
 ee.Initialize()
 
+JRC = ee.ImageCollection("JRC/GSW1_1/MonthlyHistory")
+
 def sentinel2toa(img):
     """
     Convert processed sentinel toa reflectance to raw values, and extract azimuth / zenith metadata
@@ -28,24 +30,6 @@ def rescale(img, exp, thresholds):
     #print('rescale:', img, exp, thresholds)
     #return img.subtract(thresholds[0]).divide(thresholds[1]-thresholds[0])
     return img.expression(exp, {'img': img}).subtract(thresholds[0]).divide(thresholds[1] - thresholds[0])
-
-def maskS2SR(img):
-    """
-    Apply built in masks to Sentinel-2 surface reflectance imagery
-    Parameters:
-        img (ee.Image): Sentinel-2 level 2A surface reflectange image
-    Returns:
-        ee.Image: masked image
-    """
-    scored = basicQA(img)
-    maskBand = img.select('SCL')
-    cloudMask = maskBand.neq(8).And(maskBand.neq(9))
-    waterMask = maskBand.neq(6)
-    cirrusMask = maskBand.neq(10)
-    snowMask = maskBand.neq(11)
-    darkMask = maskBand.neq(2).And(maskBand.neq(3))
-    return scored.updateMask(cloudMask.And(waterMask).And(cirrusMask).And(snowMask).And(darkMask))
-
 
 def waterScore(img):
     """ 
@@ -187,5 +171,34 @@ def sentinelCloudScore(img):
     score = score.multiply(100).byte()
     #print('score:', type(score))
      
-    return img.addBands(score.rename(['cloudScore']))
+    return score.rename(['cloudScore'])
 
+def mask(img):
+    date = img.date()
+    year = date.get('year')
+    month = date.get('month')
+    cdi = ee.Algorithms.Sentinel2.CDI(img)
+    scored = basicQA(img)
+    clouds = sentinelCloudScore(scored).lte(15).Or(cdi.gte(-0.2))
+    water = waterScore(img).select('waterScore').lte(0.5)
+    jrc = ee.Image(JRC.filterMetadata('month', 'equals', month).filterMetadata('year', 'equals', year).first())
+    waterMask = jrc.focal_max(1, 'square', 'pixels').eq(2).Or(water)
+    shadowMask = img.select('B11').gt(900)
+    return scored.updateMask(clouds.And(shadowMask).And(waterMask))
+
+def maskS2SR(img):
+    """
+    Apply built in masks to Sentinel-2 surface reflectance imagery
+    Parameters:
+        img (ee.Image): Sentinel-2 level 2A surface reflectange image
+    Returns:
+        ee.Image: masked image
+    """
+    scored = basicQA(img)
+    maskBand = img.select('SCL')
+    cloudMask = maskBand.neq(8).And(maskBand.neq(9))
+    waterMask = maskBand.neq(6)
+    cirrusMask = maskBand.neq(10)
+    snowMask = maskBand.neq(11)
+    darkMask = maskBand.neq(2).And(maskBand.neq(3))
+    return scored.updateMask(cloudMask.And(waterMask).And(cirrusMask).And(snowMask).And(darkMask))
