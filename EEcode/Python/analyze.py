@@ -64,8 +64,14 @@ def analyze_iw(aoi, doi, dictionary, size, aoiId):
         print('prior_dt:', prior_dt)
 
         rgbn = ['B2', 'B3', 'B4', 'B8', 'B11', 'B12']
-
-        masked = S2.filterDate(prior, today).filterBounds(aoi).map(mask)
+        
+        filtered = S2.filterDate(prior, today).filterBounds(aoi)
+        # TODO: this is an GEE implementation of if else logic to apply
+        # the SR cloud/water mask to images after 2019 and the TOA to those before
+        masked = ee.Algorithms.If(projdate.gt(ee.Date('2018-09-01'),
+                                              filtered.map(maskSR),
+                                              filtered.map(maskTOA)
+        #masked = S2.filterDate(prior, today).filterBounds(aoi).map(mask)
         corrected = terrain.c_correct(masked, rgbn, aoi, DEM)
 
         after = corrected.filterDate(projdate, today)
