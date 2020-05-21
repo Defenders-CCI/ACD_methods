@@ -7,7 +7,7 @@ ee.Initialize()
 
 # Import the Sentinel-2 image collection
 S2 = ee.ImageCollection("COPERNICUS/S2")
-CDL = ee.ImageCollection("USDA/NASS/CDL/2017")
+CDL = ee.ImageCollection("USDA/NASS/CDL/2019")
 DEM = ee.ImageCollection("USGS/SRTMGL1_003")
 
 def ND(img, NIR, R, G, SWIR1, SWIR2):
