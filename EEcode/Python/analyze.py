@@ -93,7 +93,7 @@ def analyze_iw(aoi, doi, dictionary, size, aoiId):
         # run the IW algorithm between the before and after collections within the user defined AOI.
         # by default, ag fields are masked by 'yes'
         print('running the iw algorithm')
-        iwout = iw.runIW(before, after, aoi, 'yes').clip(aoi)
+        iwout = iw.runIW(before, after, aoi, 30, 'yes').clip(aoi)
         
         print('performing LDA analysis')
         # calculate LDA score to discriminate change/no-change pixels in iwout.  Requires thresholds from habitat dictionary        
