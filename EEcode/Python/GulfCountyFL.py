@@ -10,7 +10,7 @@ import ee, analyze, dictionaries
 ee.Initialize()
 
 # give this aoi a name
-testId = 'HughesMillCA'
+testId = 'GulfCountyFL'
 
 # TODO: split up analyze functions so we don't need these
 # grab the relevant dictionary of lda coefficients

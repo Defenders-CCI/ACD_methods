@@ -66,12 +66,15 @@ def analyze_iw(aoi, doi, dictionary, size, aoiId):
 
         rgbn = ['B2', 'B3', 'B4', 'B8', 'B11', 'B12']
         
-        if(projdate.get('year').getInfo() >= 2019):
-            filtered = SR.filterDate(prior, today).filterBounds(aoi)
-            masked = filtered.map(clouds.maskSR)
-        else:
-            filtered = S2.filterDate(prior, today).filterBounds(aoi)
-            masked = filtered.map(clouds.maskTOA)
+        s2 = S2.filterDate(prior, today).filterBounds(aoi).map(clouds.maskTOA)
+        sr = SR.filterDate(prior, today).filterBounds(aoi).map(clouds.maskSR)
+        masked = s2.select(rgbn).merge(sr.select(rgbn))
+#        if(projdate.get('year').getInfo() >= 2019):
+#            filtered = SR.filterDate(prior, today).filterBounds(aoi)
+#            masked = filtered.map(clouds.maskSR)
+#        else:
+#            filtered = S2.filterDate(prior, today).filterBounds(aoi)
+#            masked = filtered.map(clouds.maskTOA)
 
         #masked = S2.filterDate(prior, today).filterBounds(aoi).map(mask)
         corrected = terrain.c_correct(masked, rgbn, aoi, DEM)
