@@ -202,10 +202,10 @@ def iw(change, aoi, niter):
     bands = change.bandNames()
     cat_p = bands.map(rnm_p)
     net = 1
-    zs = calc_zp(change, aoi, 100)
+    zs = calc_zp(change, aoi, 300)
     while net <= niter:
         dp = zs.select(cat_p).max(0.001).multiply(change).rename(bands)
-        zs = calc_zp(dp, aoi, 100)
+        zs = calc_zp(dp, aoi, 30)
         net += 1
     return zs
 

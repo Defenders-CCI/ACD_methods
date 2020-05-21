@@ -14,6 +14,7 @@ ee.Initialize()
 
 CDL = ee.Image("USDA/NASS/CDL/2017")
 S2 = ee.ImageCollection("COPERNICUS/S2")
+SR = ee.ImageCollection("COPERNICUS/S2_SR")
 DEM = ee.Image("USGS/SRTMGL1_003")
 
 def sz(ft):
@@ -65,12 +66,13 @@ def analyze_iw(aoi, doi, dictionary, size, aoiId):
 
         rgbn = ['B2', 'B3', 'B4', 'B8', 'B11', 'B12']
         
-        filtered = S2.filterDate(prior, today).filterBounds(aoi)
-        # TODO: this is an GEE implementation of if else logic to apply
-        # the SR cloud/water mask to images after 2019 and the TOA to those before
-        masked = ee.Algorithms.If(projdate.gt(ee.Date('2018-09-01')),
-                                              filtered.map(clouds.maskSR),
-                                              filtered.map(clouds.maskTOA))
+        if(projdate.get('year').getInfo() >= 2019):
+            filtered = SR.filterDate(prior, today).filterBounds(aoi)
+            masked = filtered.map(clouds.maskSR)
+        else:
+            filtered = S2.filterDate(prior, today).filterBounds(aoi)
+            masked = filtered.map(clouds.maskTOA)
+
         #masked = S2.filterDate(prior, today).filterBounds(aoi).map(mask)
         corrected = terrain.c_correct(masked, rgbn, aoi, DEM)
 
