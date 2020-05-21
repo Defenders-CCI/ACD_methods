@@ -57,7 +57,9 @@ def analyze_iw(aoi, doi, dictionary, size, aoiId):
         sq_meters = ee.Number(size).multiply(4047)
         projdate = ee.Date(doi);
         today = projdate.advance(3, 'month');
-    
+        
+        today_dt = str(datetime.fromtimestamp(int(today.getInfo()['value'])/1e3))[:10]
+        print('today', today_dt)
         proj_dt = str(datetime.fromtimestamp(int(projdate.getInfo()['value']) / 1e3))[:10]
         print('proj_dt:', proj_dt)
         prior = ee.Date.fromYMD(projdate.get('year').subtract(1), projdate.get('month'), projdate.get('day'))
@@ -65,12 +67,12 @@ def analyze_iw(aoi, doi, dictionary, size, aoiId):
         print('prior_dt:', prior_dt)
 
         rgbn = ['B2', 'B3', 'B4', 'B8', 'B11', 'B12']
-        
+        print(today.get('year').getInfo())
         if(prior.get('year').getInfo() >= 2019):
             masked = SR.filterDate(prior, today).filterBounds(aoi).map(clouds.maskSR)
         elif(today.get('year').getInfo() >= 2019):
-            s2 = S2.filterDate(prior, '2018-12-31').filterBounds(aoi).map(clouds.maskTOA)
-            sr = SR.filterDate('2019-01-01', today).filterBounds(aoi).map(clouds.maskSR)
+            s2 = S2.filterDate(prior, '2018-12-25').filterBounds(aoi).map(clouds.maskTOA)
+            sr = SR.filterDate('2018-12-26', today).filterBounds(aoi).map(clouds.maskSR)
             masked = s2.select(rgbn).merge(sr.select(rgbn))
         else:
             masked = S2.filterDate(prior, today).filterBounds(aoi).map(clouds.maskTOA)
