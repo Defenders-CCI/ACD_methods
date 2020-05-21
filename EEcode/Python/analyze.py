@@ -66,9 +66,14 @@ def analyze_iw(aoi, doi, dictionary, size, aoiId):
 
         rgbn = ['B2', 'B3', 'B4', 'B8', 'B11', 'B12']
         
-        s2 = S2.filterDate(prior, today).filterBounds(aoi).map(clouds.maskTOA)
-        sr = SR.filterDate(prior, today).filterBounds(aoi).map(clouds.maskSR)
-        masked = s2.select(rgbn).merge(sr.select(rgbn))
+        if(prior.get('year').getInfo() >= 2019):
+            masked = SR.filterDate(prior, today).filterBounds(aoi).map(clouds.maskSR)
+        elif(today.get('year').getInfo() >= 2019):
+            s2 = S2.filterDate(prior, '2018-12-31').filterBounds(aoi).map(clouds.maskTOA)
+            sr = SR.filterDate('2019-01-01', today).filterBounds(aoi).map(clouds.maskSR)
+            masked = s2.select(rgbn).merge(sr.select(rgbn))
+        else:
+            masked = S2.filterDate(prior, today).filterBounds(aoi).map(clouds.maskTOA)
 #        if(projdate.get('year').getInfo() >= 2019):
 #            filtered = SR.filterDate(prior, today).filterBounds(aoi)
 #            masked = filtered.map(clouds.maskSR)
@@ -78,10 +83,10 @@ def analyze_iw(aoi, doi, dictionary, size, aoiId):
 
         #masked = S2.filterDate(prior, today).filterBounds(aoi).map(mask)
         corrected = terrain.c_correct(masked, rgbn, aoi, DEM)
-
+        
         after = corrected.filterDate(projdate, today)
         count = after.size()
-        #print('after size:', count.getInfo())
+        print('after size:', count.getInfo())
         reference = after.sort('system:time_start', False)
         time0 = ee.Image(reference.first()).get('system:time_start')
         recent_date = str(datetime.fromtimestamp(int(time0.getInfo()) / 1e3))[:10]
