@@ -31,7 +31,7 @@ def ND(img, NIR, R, G, SWIR1, SWIR2):
     NDVI = img.normalizedDifference([NIR, R]).rename(["ndvi"])
     return img.addBands(NDVI).addBands(NDSI).addBands(NBR).addBands(NDWI)
 
-def CV(b, a, bnds, aoi, scl):
+def CV(b, a, bnds, aoi, scl, tScl):
     """
     Calculate the change vector between two images
     
@@ -41,6 +41,7 @@ def CV(b, a, bnds, aoi, scl):
         bnds (ee.List<str>): band names included in calculation
         aoi (ee.Geometry): area of interest
         scl (int): scale parameter for reduction operations
+        tScl (int): even integer [2,12]
         
     Returns:
         ee.Image: image with single change vector ['cv'] band
@@ -52,17 +53,17 @@ def CV(b, a, bnds, aoi, scl):
         geometry = aoi,
         scale = scl,
         maxPixels = 1e13,
-        tileScale = 6).toImage(bnds)
+        tileScale = tScl).toImage(bnds)
     diff_mn = diff.reduceRegion(
         reducer= ee.Reducer.mean(),
         geometry= aoi,
         scale= scl,
         maxPixels= 1e13,
-        tileScale = 6).toImage(bnds)
+        tileScale = tScl).toImage(bnds)
     return (diff.subtract(diff_mn).divide(diff_sd).pow(2).reduce(ee.Reducer.sum()).rename(['cv']))
 
 
-def rcvmax(b, a, bnds, aoi, scl):
+def rcvmax(b, a, bnds, aoi, scl, tScl):
     """
     Calculate the relative change vector max metric between two images
     
@@ -72,6 +73,7 @@ def rcvmax(b, a, bnds, aoi, scl):
         bnds (ee.List<str>): band names included in calculation
         aoi (ee.Geometry): area of interest
         scl(int): scale parameter for reduction operations
+        tScl (int): even integer [2,12]
         
     Returns:
         ee.Image: image with single change vector ['rcvmax'] band
@@ -90,7 +92,7 @@ def rcvmax(b, a, bnds, aoi, scl):
         geometry= aoi,
         scale= scl,
         maxPixels= 1e13,
-        tileScale=6).toImage(bnds).divide(maxab)
+        tileScale=tScl).toImage(bnds).divide(maxab)
     # bands = diff_sd.bandNames()
     # print('diff_sd bands:',  bands.getInfo())
     
@@ -99,7 +101,7 @@ def rcvmax(b, a, bnds, aoi, scl):
         geometry= aoi,
         scale= scl,
         maxPixels= 1e13,
-        tileScale=6).toImage(bnds).divide(maxab)
+        tileScale=tScl).toImage(bnds).divide(maxab)
     # bands = diff_mn.bandNames()
     # print('diff_mn bands:',  bands.getInfo())
 
@@ -137,7 +139,7 @@ def rnm_p(instring):
     newstring = ee.String(instring).cat('_p')
     return(newstring)
 
-def calc_zp(change, aoi, scl):
+def calc_zp(change, aoi, scl, tScl):
     """
     Calculate the z-score and p-values from normal and chi-squared distributions
     
@@ -145,7 +147,8 @@ def calc_zp(change, aoi, scl):
         change (ee.Image): n-band image containing change metrics
         aoi (ee.Geometry): area of interest
         scl (int): scale at which to sample images for statistic computations
-    
+        tScl (int): even integer [2,12]
+        
     Returns:
         ee.Image: image with 2n bands containing z-score and p-values
     """
@@ -179,7 +182,7 @@ def calc_zp(change, aoi, scl):
         geometry=aoi,
         scale=scl,
         maxPixels=1e13,
-        tileScale=6
+        tileScale=tScl
     ) # //.rename(norm_bands, cat_mean);
 
     img_z = norm.subtract(mystats.toImage(cat_mean)).divide(mystats.toImage(cat_sd)).rename(cat_z)
@@ -189,7 +192,7 @@ def calc_zp(change, aoi, scl):
     cp = stats.chi_p(chi, 6).multiply(-1).add(1).rename(['cv_p'])
     return chi.addBands(img_z).addBands(np).addBands(cp)
 
-def iw(change, aoi, niter, scl):
+def iw(change, aoi, niter, scl, tScl):
     """
     Iteratively reweight the pixels of an image 
     
@@ -198,20 +201,21 @@ def iw(change, aoi, niter, scl):
         aoi (ee.Geometry): area of interest
         niter (int): number of reweighting iterations
         scl (int): scale parameter for z-score calculation
+        tScl (int): even integer [2,12]
     Returns:
         ee.Image: z-score image output of calc_zp()
     """
     bands = change.bandNames()
     cat_p = bands.map(rnm_p)
     net = 1
-    zs = calc_zp(change, aoi, scl)
+    zs = calc_zp(change, aoi, scl, tScl)
     while net <= niter:
         dp = zs.select(cat_p).max(0.001).multiply(change).rename(bands)
-        zs = calc_zp(dp, aoi, scl)
+        zs = calc_zp(dp, aoi, scl, tScl)
         net += 1
     return zs
 
-def runIW(before, after, aoi, scl, ag):
+def runIW(before, after, aoi, scl, tScl, ag):
     """
     Run the complete iteratively weighted change analysis
     
@@ -220,6 +224,7 @@ def runIW(before, after, aoi, scl, ag):
         after (ee.ImageCollection): images representing the after condition
         aoi: (ee.Geometry): area of interest
         scl (int): scale parameter for image statistics calculations
+        tileScale (int): even integer [2,12]
         ag ('yes/no'): mask agricultural areas using Cultivated Lands Dataset?
         
     Returns:
@@ -249,10 +254,10 @@ def runIW(before, after, aoi, scl, ag):
 
     # CREATE IMAGE WITH BANDS FOR CHANGE METRICS CV, RCV, NDVI, NBR, NDSI
     # Calculate cv from before and after images
-    cv = CV(old, now, rgbn, aoi, scl)
+    cv = CV(old, now, rgbn, aoi, scl, tScl)
 
     # Calculate rcv from before and after images
-    rcv = rcvmax(old, now, rgbn, aoi, scl)
+    rcv = rcvmax(old, now, rgbn, aoi, scl, tScl)
     #bands = rcv.bandNames()
     #list = bands.getInfo()
     #print('rcv bands:',  rcv.bandNames().getInfo())
@@ -273,7 +278,7 @@ def runIW(before, after, aoi, scl, ag):
     # zchange not used, but still need to call zp
     #zchange = calc_zp(change, aoi, 30)
 
-    iwchange = iw(change, aoi, 10, scl)
+    iwchange = iw(change, aoi, 10, scl, tScl)
     #bands = iwchange.bandNames()
     #list = bands.getInfo()
     #print('iwchange bands:',  bands.getInfo())
