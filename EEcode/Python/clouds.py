@@ -2,7 +2,7 @@
 import ee
 
 # Initialize Earth Engine
-ee.Initialize()
+#ee.Initialize()
 
 JRC = ee.ImageCollection("JRC/GSW1_1/YearlyHistory")
 

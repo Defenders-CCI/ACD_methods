@@ -1,7 +1,7 @@
 import ee
 
 # Initialize Earth Engine
-ee.Initialize()
+#ee.Initialize()
 
 def norm_p(z):
     """ 

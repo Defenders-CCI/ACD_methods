@@ -1,7 +1,7 @@
 import ee
 
 # Initialize Earth Engine
-ee.Initialize()
+#ee.Initialize()
 
 
 # Function calculating hillshade for an image using the image's solar angle properties

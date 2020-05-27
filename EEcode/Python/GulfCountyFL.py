@@ -29,6 +29,9 @@ landcover = 'forest'
 
 output = analyze.analyze_iw(
     ee.Feature(aoi, {'mode':landcover}),
-     doi, dictionary, 0, testId)
+    doi,
+    dictionary,
+    0,
+    testId)
 
 print(output[3].size().getInfo())

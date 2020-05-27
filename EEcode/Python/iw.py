@@ -3,7 +3,7 @@ import ee
 import stats
 
 # Initialize Earth Engine
-ee.Initialize()
+#ee.Initialize()
 
 # Import the Sentinel-2 image collection
 S2 = ee.ImageCollection("COPERNICUS/S2")
