@@ -48,18 +48,29 @@ def CV(b, a, bnds, aoi, scl, tScl):
     """
     
     diff = b.select(bnds).subtract(a.select(bnds))
-    diff_sd = diff.reduceRegion(
-        reducer = ee.Reducer.stdDev(),
-        geometry = aoi,
-        scale = scl,
-        maxPixels = 1e13,
-        tileScale = tScl).toImage(bnds)
-    diff_mn = diff.reduceRegion(
-        reducer= ee.Reducer.mean(),
-        geometry= aoi,
-        scale= scl,
-        maxPixels= 1e13,
-        tileScale = tScl).toImage(bnds)
+    diff_stats = diff.reduceRegion(
+            reducer = ee.Reducer.stdDev().combine(
+                    reducer2 = ee.Reducer.mean(),
+                    sharedInputs = True),
+            geometry = aoi,
+            scale = scl,
+            maxPixels = 1e13,
+            tileScale = tScl)
+    
+    diff_sd = diff_stats.toImage([b+'_stdDev' for b in bnds])
+    diff_mn = diff_stats.toImage([b+'_mean' for b in bnds])
+#    diff_sd = diff.reduceRegion(
+#        reducer = ee.Reducer.stdDev(),
+#        geometry = aoi,
+#        scale = scl,
+#        maxPixels = 1e13,
+#        tileScale = tScl).toImage(bnds)
+#    diff_mn = diff.reduceRegion(
+#        reducer= ee.Reducer.mean(),
+#        geometry= aoi,
+#        scale= scl,
+#        maxPixels= 1e13,
+#        tileScale = tScl).toImage(bnds)
     return (diff.subtract(diff_mn).divide(diff_sd).pow(2).reduce(ee.Reducer.sum()).rename(['cv']))
 
 
@@ -87,21 +98,33 @@ def rcvmax(b, a, bnds, aoi, scl, tScl):
     stat = diff.divide(maxab)
     # bands = stat.bandNames()
     # print('stat bands:',  bands.getInfo())
-    diff_sd = diff.reduceRegion(
-        reducer = ee.Reducer.stdDev(),
-        geometry= aoi,
-        scale= scl,
-        maxPixels= 1e13,
-        tileScale=tScl).toImage(bnds).divide(maxab)
-    # bands = diff_sd.bandNames()
-    # print('diff_sd bands:',  bands.getInfo())
+    stats = diff.reduceRegion(
+            reducer = ee.Reducer.stdDev().combine(
+                    reducer2 = ee.Reducer.mean(),
+                    sharedInputs = True),
+            geometry = aoi,
+            scale = scl,
+            maxPixels = 1e13,
+            tileScale = tScl)
     
-    diff_mn = diff.reduceRegion(
-        reducer= ee.Reducer.mean(),
-        geometry= aoi,
-        scale= scl,
-        maxPixels= 1e13,
-        tileScale=tScl).toImage(bnds).divide(maxab)
+    diff_sd = stats.toImage([b+'_stdDev' for b in bnds]).divide(maxab)
+    diff_mn = stats.toImage([b+'_mean' for b in bnds]).divide(maxab)
+#                    
+#    diff_sd = diff.reduceRegion(
+#        reducer = ee.Reducer.stdDev(),
+#        geometry= aoi,
+#        scale= scl,
+#        maxPixels= 1e13,
+#        tileScale=tScl).toImage(bnds).divide(maxab)
+#    # bands = diff_sd.bandNames()
+#    # print('diff_sd bands:',  bands.getInfo())
+#    
+#    diff_mn = diff.reduceRegion(
+#        reducer= ee.Reducer.mean(),
+#        geometry= aoi,
+#        scale= scl,
+#        maxPixels= 1e13,
+#        tileScale=tScl).toImage(bnds).divide(maxab)
     # bands = diff_mn.bandNames()
     # print('diff_mn bands:',  bands.getInfo())
 

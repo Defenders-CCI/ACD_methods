@@ -3,9 +3,10 @@ import ee
 # Initialize Earth Engine
 #ee.Initialize()
 
-
-# Function calculating hillshade for an image using the image's solar angle properties
 def shade(img, elev):
+    """
+    Calculate hillshade for an image using solar angle properties
+    """
     az = img.get('MEAN_SOLAR_AZIMUTH_ANGLE')
     solel = ee.Number(90).subtract(img.get('MEAN_SOLAR_ZENITH_ANGLE'))
     shd = ee.Terrain.hillshade(elev, az, solel)
@@ -23,9 +24,18 @@ def illuminate(img, elev):
 # def illumImg(image):
 #     return image.addBands(ee.Image(1)).addBands(illuminate(image, elev.clip(aoi)))
 
-# Function calculating and correcting hillshade for each image in a collection.
-# Return Image Collection
+
 def c_correct(imgCol, bands, aoi, elev):
+    """
+    Calculate and correct hillshade for each image in a collection.
+    Parameters:
+        imgCol (ee.ImageCollection): images to be corrected
+        bands (list): bands to correct
+        aoi (ee.Geometry): area of interest
+        elev (ee.Image): digital elevation model
+    Returns:
+        ee.ImageCollection
+    """
     print('Running c_correct algorithm')
     otherbands = ee.Image(imgCol.first()).bandNames().removeAll(bands)
     #print('otherbands:', otherbands)
