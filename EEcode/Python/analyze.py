@@ -116,7 +116,7 @@ def analyze_iw(aoi, doi, dictionary, size, aoiId):
 #                                [cvz, rcvz, ndviz, ndsiz, ndwiz, nbrz]).clip(aoi)
 
         # create a binary [0, 1] image representing change and no-change pixels.  Erode and dilate changed areas
-        selected = scored.gte(dictionary.get('lda').getInfo())\
+        selected = scored.gte(dictionary.toImage(['lda']))\
         .focal_min(1, 'square', 'pixels')\
         .focal_max(1, 'square', 'pixels')
 
