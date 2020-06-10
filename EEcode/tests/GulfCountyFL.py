@@ -7,10 +7,13 @@ Created on Thu Apr  2 16:10:00 2020
 
 import ee, analyze, dictionaries
 
+#credentials = ee.ServiceAccountCredentials('change-detection-1@change-detection-dow.iam.gserviceaccount.com', 'change-detection-dow-e29ba5eb4f51.json')
+#ee.Initialize(credentials)
+ee.Authenticate()
 ee.Initialize()
 
 # give this aoi a name
-testId = 'HughesMillCA'
+testId = 'GulfCountyFL'
 
 # TODO: split up analyze functions so we don't need these
 # grab the relevant dictionary of lda coefficients
@@ -29,6 +32,9 @@ landcover = 'forest'
 
 output = analyze.analyze_iw(
     ee.Feature(aoi, {'mode':landcover}),
-     doi, dictionary, 0, testId)
+    doi,
+    dictionary,
+    0,
+    testId)
 
 print(output[3].size().getInfo())

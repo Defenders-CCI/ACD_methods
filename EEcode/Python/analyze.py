@@ -56,7 +56,7 @@ def analyze_iw(aoi, doi, dictionary, size, aoiId):
     try:
         sq_meters = ee.Number(size).multiply(4047)
         projdate = ee.Date(doi);
-        today = projdate.advance(3, 'month');
+        today = projdate.advance(6, 'month');
         
         today_dt = str(datetime.fromtimestamp(int(today.getInfo()['value'])/1e3))[:10]
         print('today', today_dt)
@@ -103,7 +103,10 @@ def analyze_iw(aoi, doi, dictionary, size, aoiId):
         # run the IW algorithm between the before and after collections within the user defined AOI.
         # by default, ag fields are masked by 'yes'
         print('running the iw algorithm')
-        iwout = iw.runIW(before, after, aoi, 30, 6, 'yes').clip(aoi)
+        iwout = iw.runIW(before, after, aoi,
+                         scale = 30,
+                         tileScale = 6,
+                         ag = 'yes').clip(aoi)
         
         print('performing LDA analysis')
         # calculate LDA score to discriminate change/no-change pixels in iwout.  Requires thresholds from habitat dictionary        

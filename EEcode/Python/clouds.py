@@ -194,10 +194,11 @@ def maskSR(img):
     Returns:
         ee.Image: masked image
     """
+    jrc = ee.Image('JRC/GSW1_1/YearlyHistory/2018')
     scored = basicQA(img);
     maskBand = img.select('SCL')
     cloudMask = maskBand.neq(8).And(maskBand.neq(9))
-    waterMask = maskBand.neq(6)
+    waterMask = maskBand.neq(6).And(jrc.lt(2))
     cirrusMask = maskBand.neq(10)
     snowMask = maskBand.neq(11)
     darkMask = maskBand.neq(2).And(maskBand.neq(3))
