@@ -9,7 +9,7 @@ import ee, analyze, dictionaries
 
 #credentials = ee.ServiceAccountCredentials('change-detection-1@change-detection-dow.iam.gserviceaccount.com', 'change-detection-dow-e29ba5eb4f51.json')
 #ee.Initialize(credentials)
-ee.Authenticate()
+#ee.Authenticate()
 ee.Initialize()
 
 

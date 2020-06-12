@@ -103,9 +103,11 @@ def analyze_iw(aoi, doi, dictionary, size, aoiId):
         # run the IW algorithm between the before and after collections within the user defined AOI.
         # by default, ag fields are masked by 'yes'
         print('running the iw algorithm')
-        iwout = iw.runIW(before, after, aoi,
-                         scale = 30,
-                         tileScale = 6,
+        iwout = iw.runIW(before,
+                         after,
+                         aoi,
+                         scl = 30,
+                         tScl = 6,
                          ag = 'yes').clip(aoi)
         
         print('performing LDA analysis')
