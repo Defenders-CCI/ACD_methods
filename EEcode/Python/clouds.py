@@ -198,7 +198,7 @@ def maskSR(img):
     scored = basicQA(img);
     maskBand = img.select('SCL')
     cloudMask = maskBand.neq(8).And(maskBand.neq(9))
-    waterMask = maskBand.neq(6).And(jrc.lt(2))
+    waterMask = maskBand.neq(6).where(jrc.gte(2), 0)
     cirrusMask = maskBand.neq(10)
     snowMask = maskBand.neq(11)
     darkMask = maskBand.neq(2).And(maskBand.neq(3))
