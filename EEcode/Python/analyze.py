@@ -55,8 +55,8 @@ def analyze_iw(aoi, doi, dictionary, size, aoiId):
 
     try:
         sq_meters = ee.Number(size).multiply(4047)
-        projdate = ee.Date(doi);
-        today = projdate.advance(6, 'month');
+        projdate = ee.Date(doi)
+        today = projdate.advance(6, 'month')
         
         today_dt = str(datetime.fromtimestamp(int(today.getInfo()['value'])/1e3))[:10]
         print('today', today_dt)

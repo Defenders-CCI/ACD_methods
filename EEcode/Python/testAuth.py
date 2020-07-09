@@ -16,3 +16,6 @@ ee.Initialize()
 
 img = ee.Image('JRC/GSW1_1/YearlyHistory/2018')
 print(img.bandNames().getInfo())
+
+imgCol = ee.ImageCollection("JRC/GSW1_1/YearlyHistory")
+print(imgCol.size().getInfo())

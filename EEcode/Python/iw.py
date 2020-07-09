@@ -254,7 +254,7 @@ def runIW(before, after, aoi, scl, tScl, ag):
         ee.Image: z-score image output of iw()
         
     """
-    CDL = ee.Image("USDA/NASS/CDL/2017")
+    CDL = ee.Image("USDA/NASS/CDL/2019")
     DEM = ee.Image("USGS/SRTMGL1_003")
 
     demMask = DEM.select(['elevation']).lte(3500)
