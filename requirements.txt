@@ -182,7 +182,7 @@ QtPy==1.5.0
 rasterio @ file:///C:/Users/mevans/Downloads/rasterio-1.1.4-cp37-cp37m-win_amd64.whl
 requests==2.19.1
 rope==0.11.0
-rsa==4.0
+rsa==4.1
 ruamel-yaml==0.15.46
 scikit-image==0.14.0
 scikit-learn==0.21.2
