@@ -8,11 +8,12 @@ Created on Fri Jun 12 10:48:53 2020
 import ee
 
 ## INITIALIZE WITH SERVICE ACCOUNT
-#credentials = ee.ServiceAccountCredentials('change-detection-1@change-detection-dow.iam.gserviceaccount.com', 'change-detection-dow-e29ba5eb4f51.json')
-#ee.Initialize(credentials)
+key = 'C:/Users/mevans/OneDrive - Defenders of Wildlife/Analyses/ACD/acd-app-04a10fe38611.json'
+credentials = ee.ServiceAccountCredentials('acd-app@appspot.gserviceaccount.com', key)
+ee.Initialize(credentials)
 
 ## INITIALIZE WITH USER ACCOUNT
-ee.Initialize()
+#ee.Initialize()
 
 img = ee.Image('JRC/GSW1_1/YearlyHistory/2018')
 print(img.bandNames().getInfo())

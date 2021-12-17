@@ -12,7 +12,7 @@ import os
 # Initialize Earth Engine
 #ee.Initialize()
 
-CDL = ee.Image("USDA/NASS/CDL/2017")
+CDL = ee.Image("USDA/NASS/CDL/2019")
 S2 = ee.ImageCollection("COPERNICUS/S2")
 SR = ee.ImageCollection("COPERNICUS/S2_SR")
 DEM = ee.Image("USGS/SRTMGL1_003")

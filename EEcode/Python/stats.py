@@ -91,4 +91,3 @@ def ldaScore(img, bands, dictionary):
     intercept = dictionary.toImage(['int'])
     score = img.multiply(coeffs).addBands(intercept).reduce(ee.Reducer.sum())
     return score
-

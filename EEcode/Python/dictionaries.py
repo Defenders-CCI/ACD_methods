@@ -103,3 +103,5 @@ grassland = ee.Dictionary({
   'V6':  -0.0011570211,
   'mad': 1
 })
+
+iwdictImg = ee.Image().where()
