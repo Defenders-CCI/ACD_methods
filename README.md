@@ -18,6 +18,7 @@ To see an example of an analysis using these methods, see our [case study](http:
 
 For detailed explanation of methodlology, see our [bioRxiv preprint](https://www.biorxiv.org/content/10.1101/611459v1)
 
+The Algorithm Validation directory contains R code and files to perform LDA and AUC analyses to assess the sensitivity and specificity of algorithm outputs based on training and testing data.
 
 ## Contributing
 
