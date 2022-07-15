@@ -47,7 +47,7 @@ dask==0.19.1
 datashape==0.5.4
 decorator==4.3.0
 defusedxml==0.5.0
-distributed==1.23.1
+distributed==2021.10.0
 docutils==0.14
 earthengine-api==0.1.163
 entrypoints==0.2.3
